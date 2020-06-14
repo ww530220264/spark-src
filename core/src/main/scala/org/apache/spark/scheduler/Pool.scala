@@ -61,17 +61,20 @@ private[spark] class Pool(
 
   override def addSchedulable(schedulable: Schedulable) {
     require(schedulable != null)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，添加可调度对象：${schedulable.name}-->${schedulable}")
     schedulableQueue.add(schedulable)
     schedulableNameToSchedulable.put(schedulable.name, schedulable)
     schedulable.parent = this
   }
 
   override def removeSchedulable(schedulable: Schedulable) {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，移除可调度对象：${schedulable.name}-->${schedulable}")
     schedulableQueue.remove(schedulable)
     schedulableNameToSchedulable.remove(schedulable.name)
   }
 
   override def getSchedulableByName(schedulableName: String): Schedulable = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，获取可调度对象：${schedulableName}")
     if (schedulableNameToSchedulable.containsKey(schedulableName)) {
       return schedulableNameToSchedulable.get(schedulableName)
     }
@@ -89,6 +92,7 @@ private[spark] class Pool(
   }
 
   override def checkSpeculatableTasks(minTimeToSpeculation: Int): Boolean = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，检查推测任务,minTimeToSpeculation:${minTimeToSpeculation}")
     var shouldRevive = false
     for (schedulable <- schedulableQueue.asScala) {
       shouldRevive |= schedulable.checkSpeculatableTasks(minTimeToSpeculation)
@@ -103,6 +107,7 @@ private[spark] class Pool(
     for (schedulable <- sortedSchedulableQueue) {
       sortedTaskSetQueue ++= schedulable.getSortedTaskSetQueue
     }
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，根据调度算法对队列中的可调度对象进行排序：${sortedTaskSetQueue}")
     sortedTaskSetQueue
   }
 

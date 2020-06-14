@@ -124,7 +124,7 @@ public class TransportServer implements Closeable {
       @Override
       protected void initChannel(SocketChannel ch) {
         logger.debug("New connection accepted for remote address {}.", ch.remoteAddress());
-        System.err.println("接收到新连接：" + ch.remoteAddress());
+        System.out.println("接收到新连接：" + ch.remoteAddress());
         RpcHandler rpcHandler = appRpcHandler;
         for (TransportServerBootstrap bootstrap : bootstraps) {
           rpcHandler = bootstrap.doBootstrap(ch, rpcHandler);

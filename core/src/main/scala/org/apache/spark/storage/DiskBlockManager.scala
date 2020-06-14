@@ -153,6 +153,7 @@ private[spark] class DiskBlockManager(conf: SparkConf, deleteFilesOnStop: Boolea
     logDebug("Adding shutdown hook") // force eager creation of logger
     ShutdownHookManager.addShutdownHook(ShutdownHookManager.TEMP_DIR_SHUTDOWN_PRIORITY + 1) { () =>
       logInfo("Shutdown hook called")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，停止DiskBlockManager")
       DiskBlockManager.this.doStop()
     }
   }

@@ -85,8 +85,8 @@ import org.apache.spark.util._
  *  - Tasks are individual units of work, each sent to one machine.
  *
  *  - Cache tracking: the DAGScheduler figures out which RDDs are cached to avoid recomputing them
- *    and likewise remembers which shuffle map stages have already produced output files to avoid
- *    redoing the map side of a shuffle.
+ * *    and likewise remembers which shuffle map stages have already produced output files to avoid
+ * *    redoing the map side of a shuffle.
  *
  *  - Preferred locations: the DAGScheduler also computes where to run each task in a stage based
  *    on the preferred locations of its underlying RDDs, or the location of cached or shuffle data.
@@ -398,6 +398,7 @@ private[spark] class DAGScheduler(
       // Kind of ugly: need to register RDDs with the cache and map output tracker here
       // since we can't do it in the RDD constructor because # of partitions is unknown
       logInfo("Registering RDD " + rdd.id + " (" + rdd.getCreationSite + ")")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，在mapOutputTracker中注册shuffle,相关RDD_Id:${rdd.id},${rdd.getCreationSite}")
       mapOutputTracker.registerShuffle(shuffleDep.shuffleId, rdd.partitions.length)
     }
     stage
@@ -728,9 +729,11 @@ private[spark] class DAGScheduler(
     ThreadUtils.awaitReady(waiter.completionFuture, Duration.Inf)
     waiter.completionFuture.value.get match {
       case scala.util.Success(_) =>
+        System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，Job执行成功...")
         logInfo("Job %d finished: %s, took %f s".format
           (waiter.jobId, callSite.shortForm, (System.nanoTime - start) / 1e9))
       case scala.util.Failure(exception) =>
+        System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，Job执行失败...")
         logInfo("Job %d failed: %s, took %f s".format
           (waiter.jobId, callSite.shortForm, (System.nanoTime - start) / 1e9))
         // SPARK-8644: Include user stack trace in exceptions coming from DAGScheduler.
@@ -2064,35 +2067,35 @@ private[scheduler] class DAGSchedulerEventProcessLoop(dagScheduler: DAGScheduler
 
   private def doOnReceive(event: DAGSchedulerEvent): Unit = event match {
     case JobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties) =>
-      System.out.println("接收到事件：JobSubmitted")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：JobSubmitted")
       dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties)
 
     case MapStageSubmitted(jobId, dependency, callSite, listener, properties) =>
-      System.out.println("接收到事件：MapStageSubmitted")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：MapStageSubmitted")
       dagScheduler.handleMapStageSubmitted(jobId, dependency, callSite, listener, properties)
 
     case StageCancelled(stageId, reason) =>
-      System.out.println("接收到事件：StageCancelled")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：StageCancelled")
       dagScheduler.handleStageCancellation(stageId, reason)
 
     case JobCancelled(jobId, reason) =>
-      System.out.println("接收到事件：JobCancelled")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：JobCancelled")
       dagScheduler.handleJobCancellation(jobId, reason)
 
     case JobGroupCancelled(groupId) =>
-      System.out.println("接收到事件：JobGroupCancelled")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：JobGroupCancelled")
       dagScheduler.handleJobGroupCancelled(groupId)
 
     case AllJobsCancelled =>
-      System.out.println("接收到事件：AllJobsCancelled")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：AllJobsCancelled")
       dagScheduler.doCancelAllJobs()
 
     case ExecutorAdded(execId, host) =>
-      System.out.println("接收到事件：ExecutorAdded")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：ExecutorAdded")
       dagScheduler.handleExecutorAdded(execId, host)
 
     case ExecutorLost(execId, reason) =>
-      System.out.println("接收到事件：ExecutorLost")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：ExecutorLost")
       val workerLost = reason match {
         case SlaveLost(_, true) => true
         case _ => false
@@ -2100,31 +2103,31 @@ private[scheduler] class DAGSchedulerEventProcessLoop(dagScheduler: DAGScheduler
       dagScheduler.handleExecutorLost(execId, workerLost)
 
     case WorkerRemoved(workerId, host, message) =>
-      System.out.println("接收到事件：WorkerRemoved")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：WorkerRemoved")
       dagScheduler.handleWorkerRemoved(workerId, host, message)
 
     case BeginEvent(task, taskInfo) =>
-      System.out.println("接收到事件：BeginEvent")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：BeginEvent")
       dagScheduler.handleBeginEvent(task, taskInfo)
 
     case SpeculativeTaskSubmitted(task) =>
-      System.out.println("接收到事件：SpeculativeTaskSubmitted")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：SpeculativeTaskSubmitted")
       dagScheduler.handleSpeculativeTaskSubmitted(task)
 
     case GettingResultEvent(taskInfo) =>
-      System.out.println("接收到事件：GettingResultEvent")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：GettingResultEvent")
       dagScheduler.handleGetTaskResult(taskInfo)
 
     case completion: CompletionEvent =>
-      System.out.println("接收到事件：TaskCompletion")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：TaskCompletion")
       dagScheduler.handleTaskCompletion(completion)
 
     case TaskSetFailed(taskSet, reason, exception) =>
-      System.out.println("接收到事件：TaskSetFailed")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：TaskSetFailed")
       dagScheduler.handleTaskSetFailed(taskSet, reason, exception)
 
     case ResubmitFailedStages =>
-      System.out.println("接收到事件：ResubmitFailedStages")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，DAGScheduler接收到事件：ResubmitFailedStages")
       dagScheduler.resubmitFailedStages()
   }
 

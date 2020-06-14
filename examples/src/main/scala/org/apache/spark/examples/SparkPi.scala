@@ -28,9 +28,10 @@ object SparkPi {
     val spark = SparkSession
       .builder
       .appName("Spark Pi")
-      .master("local[*]")
+      .master("local[4]")
       .getOrCreate()
     //    sparkPi(spark,args)
+//    spark.sparkContext.addJar("E:\\sourcecode\\spark\\spark-2.4.4\\examples\\target\\original-spark-examples_2.11-2.4.4.jar")
     sparkKeyBy(spark)
     spark.stop()
   }

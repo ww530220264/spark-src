@@ -71,6 +71,7 @@ class BlockManagerMasterEndpoint(
   val proactivelyReplicate = conf.get("spark.storage.replication.proactive", "false").toBoolean
 
   logInfo("BlockManagerMasterEndpoint up")
+  System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，BlockManagerMasterEndpoint已启动...")
 
   override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
     case RegisterBlockManager(blockManagerId, maxOnHeapMemSize, maxOffHeapMemSize, slaveEndpoint) =>
@@ -148,7 +149,7 @@ class BlockManagerMasterEndpoint(
   private def removeRdd(rddId: Int): Future[Seq[Int]] = {
     // First remove the metadata for the given RDD, and then asynchronously remove the blocks
     // from the slaves.
-
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，移除rdd,rddId：${rddId}")
     // Find all blocks for the given RDD, remove the block from both blockLocations and
     // the blockManagerInfo that is tracking the blocks.
     val blocks = blockLocations.asScala.keys.flatMap(_.asRDDId).filter(_.rddId == rddId)
@@ -596,8 +597,10 @@ private[spark] class BlockManagerInfo(
   }
 
   def removeBlock(blockId: BlockId) {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，从BlockManagerInfo中移除Block，blockId：${blockId}")
     if (_blocks.containsKey(blockId)) {
       _remainingMem += _blocks.get(blockId).memSize
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，释放内存：${_blocks.get(blockId).memSize},_remainingMem：${_remainingMem}")
       _blocks.remove(blockId)
     }
     _cachedBlocks -= blockId

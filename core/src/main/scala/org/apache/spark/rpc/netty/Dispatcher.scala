@@ -70,9 +70,13 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
       if (endpoints.putIfAbsent(name, new EndpointData(name, endpoint, endpointRef)) != null) {
         throw new IllegalArgumentException(s"There is already an RpcEndpoint called $name")
       }
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，endpoints.put(${name}-->EndpointData(name, ${endpoint}, ${endpointRef}))")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，${this}注册RpcEndpoint：${endpoint}")
       val data = endpoints.get(name)
       endpointRefs.put(data.endpoint, data.ref)
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，endpointRefs.put(${data.endpoint}-->${data.ref})")
       receivers.offer(data)  // for the OnStart message
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，receivers.offer(${data})：该EndpointData：${data.name}的inBox中可能有消息，需要被读取")
     }
     endpointRef
   }

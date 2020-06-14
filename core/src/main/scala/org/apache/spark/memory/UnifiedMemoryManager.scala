@@ -229,6 +229,8 @@ object UnifiedMemoryManager {
     }
     val usableMemory = systemMemory - reservedMemory
     val memoryFraction = conf.getDouble("spark.memory.fraction", 0.6)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"systemMemory：${systemMemory},reservedMemory：${reservedMemory},minSystemMemory：${minSystemMemory},usableMemory：${usableMemory},memoryFraction：${memoryFraction},execution+storage：${(usableMemory * memoryFraction).toLong}")
     (usableMemory * memoryFraction).toLong
   }
 }

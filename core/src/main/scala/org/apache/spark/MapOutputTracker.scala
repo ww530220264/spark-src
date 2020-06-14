@@ -93,6 +93,7 @@ private class ShuffleStatus(numPartitions: Int) {
       _numAvailableOutputs += 1
       invalidateSerializedMapOutputStatusCache()
     }
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，添加map output，mapId：${mapId},BlockManagerId：${status.location}")
     mapStatuses(mapId) = status
   }
 
@@ -358,6 +359,7 @@ private[spark] class MapOutputTrackerMaster(
     for (i <- 0 until numThreads) {
       pool.execute(new MessageLoop)
     }
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建用于处理map output status的请求的线程池${pool}")
     pool
   }
 
@@ -384,15 +386,18 @@ private[spark] class MapOutputTrackerMaster(
             val data = mapOutputRequests.take()
              if (data == PoisonPill) {
               // Put PoisonPill back so that other MessageLoops can see it.
+              System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，停止处理map output status的请求")
               mapOutputRequests.offer(PoisonPill)
               return
             }
             val context = data.context
             val shuffleId = data.shuffleId
             val hostPort = context.senderAddress.hostPort
+            System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，处理map output status的请求：sender-->${hostPort}、shuffleId-->${shuffleId}")
             System.err.println("Handling request to send map output locations for shuffle " + shuffleId +
               " to " + hostPort)
             val shuffleStatus = shuffleStatuses.get(shuffleId).head
+            System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，\n获取到map output status的请求sender-->${hostPort}、shuffleId-->${shuffleId}的结果：${shuffleStatus}\n向请求方相应结果：")
             context.reply(
               shuffleStatus.serializedMapStatus(broadcastManager, isLocal, minSizeForBroadcast))
           } catch {
@@ -420,6 +425,7 @@ private[spark] class MapOutputTrackerMaster(
   }
 
   def registerMapOutput(shuffleId: Int, mapId: Int, status: MapStatus) {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，向shuffleStatus注册shuffleId：${shuffleId}的mapOutput状态：mapId：${mapId}-->status：${status}")
     shuffleStatuses(shuffleId).addMapOutput(mapId, status)
   }
 
@@ -660,6 +666,7 @@ private[spark] class MapOutputTrackerMaster(
   }
 
   override def stop() {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，停止处理map output status请求的MessageLoop")
     mapOutputRequests.offer(PoisonPill)
     threadpool.shutdown()
     sendTracker(StopMapOutputTracker)

@@ -123,6 +123,8 @@ private[spark] class CompressedMapStatus(
     loc.writeExternal(out)
     out.writeInt(compressedSizes.length)
     out.write(compressedSizes)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"往外部写数据，compressedSizes.length：${compressedSizes.length},compressedSizes：${compressedSizes}")
   }
 
   override def readExternal(in: ObjectInput): Unit = Utils.tryOrIOException {
@@ -130,6 +132,8 @@ private[spark] class CompressedMapStatus(
     val len = in.readInt()
     compressedSizes = new Array[Byte](len)
     in.readFully(compressedSizes)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"读取外部数据，len：${len},compressedSizes：${compressedSizes}")
   }
 }
 

@@ -114,6 +114,7 @@ private[spark] class MemoryStore(
   }
 
   logInfo("MemoryStore started with capacity %s".format(Utils.bytesToString(maxMemory)))
+  System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，MemoryStore启动，内存容量为：${Utils.bytesToString(maxMemory)}")
 
   /** Total storage memory used including unroll memory, in bytes. */
   private def memoryUsed: Long = memoryManager.storageMemoryUsed
@@ -155,6 +156,9 @@ private[spark] class MemoryStore(
         entries.put(blockId, entry)
       }
       logInfo("Block %s stored as bytes in memory (estimated size %s, free %s)".format(
+        blockId, Utils.bytesToString(size), Utils.bytesToString(maxMemory - blocksMemoryUsed)))
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+        s"Block %s 以字节形式存储在内存中 (占用大小：%s, 内存容量剩余大小：%s)".format(
         blockId, Utils.bytesToString(size), Utils.bytesToString(maxMemory - blocksMemoryUsed)))
       true
     } else {

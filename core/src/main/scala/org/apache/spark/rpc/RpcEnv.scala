@@ -190,6 +190,7 @@ private[spark] trait RpcEnvFileServer {
     val fixedBaseUri = "/" + baseUri.stripPrefix("/").stripSuffix("/")
     require(fixedBaseUri != "/files" && fixedBaseUri != "/jars",
       "Directory URI cannot be /files nor /jars.")
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，${this}验证文件目录uri：${fixedBaseUri}")
     fixedBaseUri
   }
 

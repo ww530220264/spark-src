@@ -2056,6 +2056,9 @@ class SparkContext(config: SparkConf) extends Logging {
       func: (TaskContext, Iterator[T]) => U,
       partitions: Seq[Int],
       resultHandler: (Int, U) => Unit): Unit = {
+
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，Spark中所有Action的入口：rdd:${rdd},partitions:${partitions}")
+
     if (stopped.get()) {
       throw new IllegalStateException("SparkContext has been shutdown")
     }

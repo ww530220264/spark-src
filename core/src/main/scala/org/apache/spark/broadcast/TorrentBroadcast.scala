@@ -123,6 +123,8 @@ private[spark] class TorrentBroadcast[T: ClassTag](obj: T, id: Long)
     if (!blockManager.putSingle(broadcastId, value, MEMORY_AND_DISK, tellMaster = false)) {
       throw new SparkException(s"Failed to store $broadcastId in BlockManager")
     }
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，在Driver的BlockManager：${blockManager}上保存一份booadcast Value，Broadcast_var_ID：${broadcastId}，value：${value}\n" +
+      s"因此在Driver上运行的task不需要创建重复的副本，直接从Driver的BlockManager上获取")
     val blocks =
       TorrentBroadcast.blockifyObject(value, blockSize, SparkEnv.get.serializer, compressionCodec)
     if (checksumEnabled) {
@@ -138,6 +140,8 @@ private[spark] class TorrentBroadcast[T: ClassTag](obj: T, id: Long)
         throw new SparkException(s"Failed to store $pieceId of $broadcastId in local BlockManager")
       }
     }
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}\n，" +
+      s"TorrentBroadcast：${this}将广播变量切分为小的block：${blocks}，块数量：${blocks.length}，并放入blockManager中：${blockManager}")
     blocks.length
   }
 

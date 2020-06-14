@@ -88,20 +88,24 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
       shuffleId: Int,
       numMaps: Int,
       dependency: ShuffleDependency[K, V, C]): ShuffleHandle = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，获取一个ShuffleHandle并传递给Tasks")
     if (SortShuffleWriter.shouldBypassMergeSort(conf, dependency)) {
       // If there are fewer than spark.shuffle.sort.bypassMergeThreshold partitions and we don't
       // need map-side aggregation, then write numPartitions files directly and just concatenate
       // them at the end. This avoids doing serialization and deserialization twice to merge
       // together the spilled files, which would happen with the normal code path. The downside is
       // having multiple files open at a time and thus more memory allocated to buffers.
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，触发ByPass，返回ByPassMergeSortHandle")
       new BypassMergeSortShuffleHandle[K, V](
         shuffleId, numMaps, dependency.asInstanceOf[ShuffleDependency[K, V, V]])
     } else if (SortShuffleManager.canUseSerializedShuffle(dependency)) {
       // Otherwise, try to buffer map outputs in a serialized form, since this is more efficient:
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，，返回SerializedShuffleHandle：以序列化形式buffer map out，因为这样更高效")
       new SerializedShuffleHandle[K, V](
         shuffleId, numMaps, dependency.asInstanceOf[ShuffleDependency[K, V, V]])
     } else {
       // Otherwise, buffer map outputs in a deserialized form:
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，，返回BaseShuffleHandle：以反序列化形式buffer map output")
       new BaseShuffleHandle(shuffleId, numMaps, dependency)
     }
   }
@@ -115,6 +119,7 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
       startPartition: Int,
       endPartition: Int,
       context: TaskContext): ShuffleReader[K, C] = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，获取一个reduce分区范围的读取器【Executor上的reduce tasks调用】：BlockStoreShuffleReader")
     new BlockStoreShuffleReader(
       handle.asInstanceOf[BaseShuffleHandle[K, _, C]], startPartition, endPartition, context)
   }
@@ -127,6 +132,8 @@ private[spark] class SortShuffleManager(conf: SparkConf) extends ShuffleManager 
     numMapsForShuffle.putIfAbsent(
       handle.shuffleId, handle.asInstanceOf[BaseShuffleHandle[_, _, _]].numMaps)
     val env = SparkEnv.get
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，为一个指定的分区获取一个writer【map tasks调用】：${handle}")
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，shuffleId及对应map数量：${numMapsForShuffle}")
     handle match {
       case unsafeShuffleHandle: SerializedShuffleHandle[K @unchecked, V @unchecked] =>
         new UnsafeShuffleWriter(

@@ -103,6 +103,7 @@ private[netty] class NettyRpcEnv(
    * Remove the address's Outbox and stop it.
    */
   private[netty] def removeOutbox(address: RpcAddress): Unit = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，移除${address.hostPort}对应的发送消息盒子")
     val outbox = outboxes.remove(address)
     if (outbox != null) {
       outbox.stop()
@@ -520,11 +521,13 @@ private[netty] class NettyRpcEndpointRef(
   override def name: String = endpointAddress.name
 
   override def ask[T: ClassTag](message: Any, timeout: RpcTimeout): Future[T] = {
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，${this}发送消息：发送人：${nettyEnv.address.toSparkURL}、接收人：${this}、消息内容：${message}")
     nettyEnv.ask(new RequestMessage(nettyEnv.address, this, message), timeout)
   }
 
   override def send(message: Any): Unit = {
     require(message != null, "Message is null")
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，${this}发送【单向】消息：发送人：${nettyEnv.address.toSparkURL}、接收人：${this}、消息内容：${message}")
     nettyEnv.send(new RequestMessage(nettyEnv.address, this, message))
   }
 

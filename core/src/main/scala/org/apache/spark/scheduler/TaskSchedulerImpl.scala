@@ -154,6 +154,7 @@ private[spark] class TaskSchedulerImpl(
         sc.env.rpcEnv)
       sc.env.rpcEnv.setupEndpoint("barrierSync", barrierCoordinator)
       logInfo("Registered BarrierCoordinator endpoint")
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，注册屏障Barrier协调器")
     }
   }
 

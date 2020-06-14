@@ -974,6 +974,9 @@ private[spark] class TaskSetManager(
     // and we are not using an external shuffle server which could serve the shuffle outputs.
     // The reason is the next stage wouldn't be able to fetch the data from this dead executor
     // so we would need to rerun these tasks on other executors.
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"Executor丢失executorId：${execId},host：${host},reason:${reason}，如果没有使用external shuffle server我们需要重新将运行在该Executor上的tasks在其他的Executors上跑起来")
+
     if (tasks(0).isInstanceOf[ShuffleMapTask] && !env.blockManager.externalShuffleServiceEnabled
         && !isZombie) {
       for ((tid, info) <- taskInfos if info.executorId == execId) {

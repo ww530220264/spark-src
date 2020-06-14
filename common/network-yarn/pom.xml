@@ -130,40 +130,40 @@
       </plugin>
 
       <!-- probes to validate that those dependencies which must be shaded are  -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <macrodef name="shaded">
-                  <attribute name="resource"/>
-                  <sequential>
-                    <fail message="Not found ${shade}@{resource}">
-                      <condition>
-                        <not>
-                          <resourceexists>
-                            <zipentry zipfile="${shuffle.jar}" name="${shade}@{resource}"/>
-                          </resourceexists>
-                        </not>
-                      </condition>
-                    </fail>
-                  </sequential>
-                </macrodef>
-                <echo>Verifying dependency shading</echo>
-                <shaded resource="com/fasterxml/jackson/core/JsonParser.class" />
-                <shaded resource="com/fasterxml/jackson/annotation/JacksonAnnotation.class" />
-                <shaded resource="com/fasterxml/jackson/databind/JsonSerializer.class" />
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-antrun-plugin</artifactId>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>verify</phase>-->
+<!--            <goals>-->
+<!--              <goal>run</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              <target>-->
+<!--                <macrodef name="shaded">-->
+<!--                  <attribute name="resource"/>-->
+<!--                  <sequential>-->
+<!--                    <fail message="Not found ${shade}@{resource}">-->
+<!--                      <condition>-->
+<!--                        <not>-->
+<!--                          <resourceexists>-->
+<!--                            <zipentry zipfile="${shuffle.jar}" name="${shade}@{resource}"/>-->
+<!--                          </resourceexists>-->
+<!--                        </not>-->
+<!--                      </condition>-->
+<!--                    </fail>-->
+<!--                  </sequential>-->
+<!--                </macrodef>-->
+<!--                <echo>Verifying dependency shading</echo>-->
+<!--                <shaded resource="com/fasterxml/jackson/core/JsonParser.class" />-->
+<!--                <shaded resource="com/fasterxml/jackson/annotation/JacksonAnnotation.class" />-->
+<!--                <shaded resource="com/fasterxml/jackson/databind/JsonSerializer.class" />-->
+<!--              </target>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
     </plugins>
   </build>
 </project>

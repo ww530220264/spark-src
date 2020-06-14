@@ -199,8 +199,11 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
         new SecurityManager(executorConf),
         clientMode = true)
       val driver = fetcher.setupEndpointRefByURI(driverUrl)
+      System.out.println(s"【wangwei】【Executor】线程：${Thread.currentThread().getName}，根据Url创建对Driver的EndpointRef：${driverUrl}")
       val cfg = driver.askSync[SparkAppConfig](RetrieveSparkAppConfig)
+      System.out.println(s"【wangwei】【Executor】线程：${Thread.currentThread().getName}，使用DriverEndpointRef同步向Driver询问AppConfig信息")
       val props = cfg.sparkProperties ++ Seq[(String, String)](("spark.app.id", appId))
+      System.out.println(s"【wangwei】【Executor】线程：${Thread.currentThread().getName}，获取到AppConfig信息：${props.toMap}")
       fetcher.shutdown()
 
       // Create SparkEnv using properties we fetched from the driver.
@@ -217,7 +220,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       cfg.hadoopDelegationCreds.foreach { tokens =>
         SparkHadoopUtil.get.addDelegationTokens(tokens, driverConf)
       }
-
+      System.out.println(s"【wangwei】【Executor】线程：${Thread.currentThread().getName}，根据从Driver获取的AppConfig相关信息，创建ExecutorEnv....")
       val env = SparkEnv.createExecutorEnv(
         driverConf, executorId, hostname, cores, cfg.ioEncryptionKey, isLocal = false)
 
@@ -277,7 +280,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       appId == null) {
       printUsageAndExit()
     }
-
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，Executor启动参数：${argv.mkString("\n")}")
     run(driverUrl, executorId, hostname, cores, appId, workerUrl, userClassPath)
     System.exit(0)
   }

@@ -227,7 +227,11 @@ object SparkEnv extends Logging {
       mockOutputCommitCoordinator: Option[OutputCommitCoordinator] = None): SparkEnv = {
 
     val isDriver = executorId == SparkContext.DRIVER_IDENTIFIER
-
+    if (isDriver){
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，为Driver创建SparkEnv环境")
+    }else{
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，为Executor【ExecutorID：${executorId}】创建SparkEnv环境")
+    }
     // Listener bus is only used on the driver
     if (isDriver) {
       assert(listenerBus != null, "Attempted to create driver SparkEnv with null listener bus!")
@@ -248,10 +252,15 @@ object SparkEnv extends Logging {
     val systemName = if (isDriver) driverSystemName else executorSystemName
     val rpcEnv = RpcEnv.create(systemName, bindAddress, advertiseAddress, port.getOrElse(-1), conf,
       securityManager, numUsableCores, !isDriver)
-
+    if (isDriver){
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建Driver的RpcEnv：${rpcEnv.address.toSparkURL}")
+    }else{
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建Executor的RpcEnv：${rpcEnv.address.toSparkURL}")
+    }
     // Figure out which port RpcEnv actually bound to in case the original port is 0 or occupied.
     if (isDriver) {
       conf.set("spark.driver.port", rpcEnv.address.port.toString)
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，spark.driver.port-->${rpcEnv.address.port.toString}")
     }
 
     // Create an instance of the class with the given name, possibly initializing it with our conf
@@ -283,16 +292,17 @@ object SparkEnv extends Logging {
     val serializer = instantiateClassFromConf[Serializer](
       "spark.serializer", "org.apache.spark.serializer.JavaSerializer")
     logDebug(s"Using serializer: ${serializer.getClass}")
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建spark序列化器spark.serializer-->${serializer.getClass}")
 
     val serializerManager = new SerializerManager(serializer, conf, ioEncryptionKey)
-
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建序列化管理器SerializerManager-->${serializerManager.getClass}")
     val closureSerializer = new JavaSerializer(conf)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建闭包序列化器closureSerializer-->${closureSerializer.getClass}")
 
     def registerOrLookupEndpoint(
         name: String, endpointCreator: => RpcEndpoint):
       RpcEndpointRef = {
       if (isDriver) {
-        System.out.println("Registering " + name)
         rpcEnv.setupEndpoint(name, endpointCreator)
       } else {
         RpcUtils.makeDriverRef(name, conf, rpcEnv)
@@ -300,11 +310,16 @@ object SparkEnv extends Logging {
     }
 
     val broadcastManager = new BroadcastManager(isDriver, conf, securityManager)
-
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建BroadCastManager：${broadcastManager}")
     val mapOutputTracker = if (isDriver) {
       new MapOutputTrackerMaster(conf, broadcastManager, isLocal)
     } else {
       new MapOutputTrackerWorker(conf)
+    }
+    if (isDriver){
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，MapOutputTrackerMaster：${mapOutputTracker}")
+    }else{
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，MapOutputTrackerWorker：${mapOutputTracker}")
     }
 
     // Have to assign trackerEndpoint after initialization as MapOutputTrackerEndpoint
@@ -312,7 +327,9 @@ object SparkEnv extends Logging {
     mapOutputTracker.trackerEndpoint = registerOrLookupEndpoint(MapOutputTracker.ENDPOINT_NAME,
       new MapOutputTrackerMasterEndpoint(
         rpcEnv, mapOutputTracker.asInstanceOf[MapOutputTrackerMaster], conf))
-
+    if (!isDriver){
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，检索EndPoint：${mapOutputTracker.trackerEndpoint}")
+    }
     // Let the user specify short names for shuffle managers
     val shortShuffleMgrNames = Map(
       "sort" -> classOf[org.apache.spark.shuffle.sort.SortShuffleManager].getName,
@@ -344,7 +361,9 @@ object SparkEnv extends Logging {
       BlockManagerMaster.DRIVER_ENDPOINT_NAME,
       new BlockManagerMasterEndpoint(rpcEnv, isLocal, conf, listenerBus)),
       conf, isDriver)
-
+    if (!isDriver){
+      System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，检索driverEndpoint，用来创建BlockManagerMaster")
+    }
     // NB: blockManager is not valid until initialize() is called later.
     val blockManager = new BlockManager(executorId, rpcEnv, blockManagerMaster,
       serializerManager, conf, memoryManager, mapOutputTracker, shuffleManager,
