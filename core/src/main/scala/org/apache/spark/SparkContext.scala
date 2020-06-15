@@ -1494,6 +1494,7 @@ class SparkContext(config: SparkConf) extends Logging {
     val bc = env.broadcastManager.newBroadcast[T](value, isLocal)
     val callSite = getCallSite
     logInfo("Created broadcast " + bc.id + " from " + callSite.shortForm)
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，创建广播变量：${bc.id},创建位置：${callSite.shortForm}")
     cleaner.foreach(_.registerBroadcastForCleanup(bc))
     bc
   }

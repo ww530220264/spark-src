@@ -89,7 +89,8 @@ private[spark] class DiskStore(
       file.getName,
       Utils.bytesToString(file.length()),
       finishTime - startTime))
-    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，Block %s 保存为大小为： %s 的文件在磁盘上，耗时： %d ms".format(
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"Block %s 保存为大小为： %s 的文件在磁盘上${file.getAbsolutePath}，耗时： %d ms".format(
       file.getName,
       Utils.bytesToString(file.length()),
       finishTime - startTime))

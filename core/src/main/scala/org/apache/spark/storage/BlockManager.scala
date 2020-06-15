@@ -523,6 +523,11 @@ private[spark] class BlockManager(
     val storageLevel = status.storageLevel
     val inMemSize = Math.max(status.memSize, droppedMemorySize)
     val onDiskSize = status.diskSize
+    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+      s"blockManager向BlockManagerMaster汇报BlockStatus：${this}" +
+      s"master：${master.driverEndpoint.address.toSparkURL}," +
+      s"blockManagerId：${blockManagerId}，blockId：${blockId}，" +
+      s"storageLevel：${storageLevel}，占用内存大小：${inMemSize}，磁盘占用大小：${onDiskSize}")
     master.updateBlockInfo(blockManagerId, blockId, storageLevel, inMemSize, onDiskSize)
   }
 
@@ -1334,6 +1339,8 @@ private[spark] class BlockManager(
       if (cachedPeers == null || forceFetch || timeout) {
         cachedPeers = master.getPeers(blockManagerId).sortBy(_.hashCode)
         lastPeerFetchTime = System.currentTimeMillis
+        System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+          s"获取到系统中的BlockManagers："+ cachedPeers.mkString("[", ",", "]"))
         logDebug("Fetched peers from master: " + cachedPeers.mkString("[", ",", "]"))
       }
       cachedPeers
@@ -1598,6 +1605,8 @@ private[spark] class BlockManager(
   private def addUpdatedBlockStatusToTaskMetrics(blockId: BlockId, status: BlockStatus): Unit = {
     if (conf.get(config.TASK_METRICS_TRACK_UPDATED_BLOCK_STATUSES)) {
       Option(TaskContext.get()).foreach { c =>
+        System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
+          s"更新TaskMetric中的block状态指标：blockId：${blockId}-->status：${status}")
         c.taskMetrics().incUpdatedBlockStatuses(blockId -> status)
       }
     }
