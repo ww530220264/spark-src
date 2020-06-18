@@ -46,6 +46,10 @@ abstract class ReceiverInputDStream[T: ClassTag](_ssc: StreamingContext)
    */
   override protected[streaming] val rateController: Option[RateController] = {
     if (RateController.isBackPressureEnabled(ssc.conf)) {
+      System.out.println(
+        s"""【wangwei】线程：${Thread.currentThread().getName}，
+           |inputStream启用了速率控制器:${this}
+           |""".stripMargin)
       Some(new ReceiverRateController(id, RateEstimator.create(ssc.conf, ssc.graph.batchDuration)))
     } else {
       None

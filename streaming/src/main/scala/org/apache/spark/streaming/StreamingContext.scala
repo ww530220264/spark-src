@@ -240,6 +240,7 @@ class StreamingContext private[streaming] (
       fs.mkdirs(path)
       val fullPath = fs.getFileStatus(path).getPath().toString
       sc.setCheckpointDir(fullPath)
+      System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，Streaming checkpoint:${fullPath}""")
       checkpointDir = fullPath
     } else {
       checkpointDir = null

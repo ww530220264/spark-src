@@ -59,6 +59,10 @@ class RecurringTimer(clock: Clock, period: Long, callback: (Long) => Unit, name:
   def start(startTime: Long): Long = synchronized {
     nextTime = startTime
     thread.start()
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |启动定时器:"Started timer for ${name} at time ${nextTime}
+         |""".stripMargin)
     logInfo("Started timer for " + name + " at time " + nextTime)
     nextTime
   }

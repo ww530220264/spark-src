@@ -85,6 +85,7 @@ private[streaming] class PIDRateEstimator(
     ): Option[Double] = {
     logTrace(s"\ntime = $time, # records = $numElements, " +
       s"processing time = $processingDelay, scheduling delay = $schedulingDelay")
+
     this.synchronized {
       if (time > latestTime && numElements > 0 && processingDelay > 0) {
 
@@ -124,6 +125,11 @@ private[streaming] class PIDRateEstimator(
             | delaySinceUpdate = $delaySinceUpdate, dError = $dError
             """.stripMargin)
 
+        System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，速率估算结束，参考信息：
+                    | latestRate = $latestRate, error = $error
+                    | latestError = $latestError, historicalError = $historicalError
+                    | delaySinceUpdate = $delaySinceUpdate, dError = $dError
+            """.stripMargin)
         latestTime = time
         if (firstRun) {
           latestRate = processingRate

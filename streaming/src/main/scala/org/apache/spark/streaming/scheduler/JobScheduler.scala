@@ -70,6 +70,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     if (eventLoop != null) return // scheduler has already been started
 
     logDebug("Starting JobScheduler")
+    System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，启动JobScheduler""")
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 
@@ -181,6 +182,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   }
 
   private def handleJobStart(job: Job, startTime: Long) {
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |JobScheduler接收到JobStart事件:job.id-->${job.id},startTime-->${startTime}""".stripMargin)
+
     val jobSet = jobSets.get(job.time)
     val isFirstJobOfJobSet = !jobSet.hasStarted
     jobSet.handleJobStart(job)
@@ -195,6 +200,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   }
 
   private def handleJobCompletion(job: Job, completedTime: Long) {
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |JobScheduler接收到JobComplete事件:job.id-->${job.id},completedTime-->${completedTime}""".stripMargin)
+
     val jobSet = jobSets.get(job.time)
     jobSet.handleJobCompletion(job)
     job.setEndTime(completedTime)
@@ -219,6 +228,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   }
 
   private def handleError(msg: String, e: Throwable) {
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |JobScheduler接收到JobError事件:msg-->${msg},exception-->${e.getMessage}""".stripMargin)
+
     logError(msg, e)
     ssc.waiter.notifyError(e)
     PythonDStream.stopStreamingContextIfPythonProcessIsDead(e)

@@ -75,6 +75,10 @@ final private[streaming] class DStreamGraph extends Serializable with Logging {
     this.synchronized {
       require(batchDuration == null,
         s"Batch duration already set as $batchDuration. Cannot set it again.")
+      System.out.println(
+        s"""【wangwei】线程：${Thread.currentThread().getName}，
+           |DStreamGraph设置batchDuration:${duration}
+           |""".stripMargin)
       batchDuration = duration
     }
   }
@@ -90,6 +94,7 @@ final private[streaming] class DStreamGraph extends Serializable with Logging {
   def addInputStream(inputStream: InputDStream[_]) {
     this.synchronized {
       inputStream.setGraph(this)
+      System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，DStreamGraph中添加inputStream:${inputStream}""")
       inputStreams += inputStream
     }
   }
@@ -97,6 +102,7 @@ final private[streaming] class DStreamGraph extends Serializable with Logging {
   def addOutputStream(outputStream: DStream[_]) {
     this.synchronized {
       outputStream.setGraph(this)
+      System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，DStreamGraph中添加output stream:${outputStream}""")
       outputStreams += outputStream
     }
   }

@@ -44,6 +44,8 @@ private class DefaultPerPartitionConfig(conf: SparkConf)
     extends PerPartitionConfig {
   val maxRate = conf.getLong("spark.streaming.kafka.maxRatePerPartition", 0)
   val minRate = conf.getLong("spark.streaming.kafka.minRatePerPartition", 1)
+  System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，
+        设置kafka每个partition摄取数据速率：maxRate：${maxRate},minRate：${minRate}""".stripMargin)
 
   def maxRatePerPartition(topicPartition: TopicPartition): Long = maxRate
   override def minRatePerPartition(topicPartition: TopicPartition): Long = minRate

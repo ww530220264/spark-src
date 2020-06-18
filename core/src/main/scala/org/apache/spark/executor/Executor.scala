@@ -62,7 +62,7 @@ private[spark] class Executor(
   extends Logging {
 
   logInfo(s"Starting executor ID $executorId on host $executorHostname")
-
+  System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，启动Executor ID-->$executorId on host-->$executorHostname")
   // Application dependencies (added through SparkContext) that we've fetched so far on this node.
   // Each map holds the master's timestamp for the version of that file or JAR we got.
   private val currentFiles: HashMap[String, Long] = new HashMap[String, Long]()
@@ -844,7 +844,8 @@ private[spark] class Executor(
 
     val message = Heartbeat(executorId, accumUpdates.toArray, env.blockManager.blockManagerId)
     try {
-      System.err.println(this.executorHostname + ":" + this.executorId + "向Driver发送心跳和活跃任务相关指标")
+      System.err.println(this.executorHostname + ":" + this.executorId + s"Executor id-->" +
+        s"${this.executorId}向Driver发送心跳和活跃任务相关指标")
       val response = heartbeatReceiverRef.askSync[HeartbeatResponse](
         message, new RpcTimeout(HEARTBEAT_INTERVAL_MS.millis, EXECUTOR_HEARTBEAT_INTERVAL.key))
       if (response.reregisterBlockManager) {

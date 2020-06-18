@@ -82,7 +82,9 @@ private[spark] class KafkaRDD[K, V](
   }
 
   override def getPartitions: Array[Partition] = {
+    // 获取kafka分区
     offsetRanges.zipWithIndex.map { case (o, i) =>
+        System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，获取kafkaRDD分区:""")
         new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
     }.toArray
   }

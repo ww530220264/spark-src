@@ -63,6 +63,13 @@ private[streaming] abstract class RateController(val streamUID: Int, rateEstimat
    */
   private def computeAndPublish(time: Long, elems: Long, workDelay: Long, waitDelay: Long): Unit =
     Future[Unit] {
+      System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName},
+         |收集BatchComplete指标：
+         |processingEnd：${time}
+         |elems：${elems}
+         |workDelay：${workDelay}
+         |waitDelay：${waitDelay}
+         |""".stripMargin)
       val newRate = rateEstimator.compute(time, elems, workDelay, waitDelay)
       newRate.foreach { s =>
         rateLimit.set(s.toLong)
