@@ -58,12 +58,20 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   private val initialRate = context.sparkContext.getConf.getLong(
     "spark.streaming.backpressure.initialRate", 0)
+  System.out.println(
+    s"""---【wangwei】线程：${Thread.currentThread().getName}，
+       |InputStream：初始背压initialRate--->${initialRate}
+       |---""".stripMargin)
 
   val executorKafkaParams = {
     val ekp = new ju.HashMap[String, Object](consumerStrategy.executorKafkaParams)
     KafkaUtils.fixKafkaParams(ekp)
     ekp
   }
+  System.out.println(
+    s"""---【wangwei】线程：${Thread.currentThread().getName}，
+       |InputStream：Executor Kafka参数--->${executorKafkaParams}
+       |---""".stripMargin)
 
   protected var currentOffsets = Map[TopicPartition, Long]()
 
@@ -285,7 +293,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   override def stop(): Unit = this.synchronized {
-    if (kc != null) {
+    if (kc != null) {Launch command
       kc.close()
     }
   }

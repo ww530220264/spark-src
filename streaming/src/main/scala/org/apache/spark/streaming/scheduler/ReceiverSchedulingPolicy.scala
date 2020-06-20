@@ -83,15 +83,19 @@ private[streaming] class ReceiverSchedulingPolicy {
     if (executors.isEmpty) {
       return receivers.map(_.streamId -> Seq.empty).toMap
     }
-
+    // [host->[executorId1,executorId2......]]
     val hostToExecutors = executors.groupBy(_.host)
+    // 构造空数组[ArrayBuffer1,ArrayBuffer2....]
     val scheduledLocations = Array.fill(receivers.length)(new mutable.ArrayBuffer[TaskLocation])
+    // 每个executors上的receiver个数
     val numReceiversOnExecutor = mutable.HashMap[ExecutorCacheTaskLocation, Int]()
     // Set the initial value to 0
+    // 初始化[executorId1->0,executorId2->0....]
     executors.foreach(e => numReceiversOnExecutor(e) = 0)
 
     // Firstly, we need to respect "preferredLocation". So if a receiver has "preferredLocation",
     // we need to make sure the "preferredLocation" is in the candidate scheduled executor list.
+    // 如果recevier存在首选location...
     for (i <- 0 until receivers.length) {
       // Note: preferredLocation is host but executors are host_executorId
       receivers(i).preferredLocation.foreach { host =>
@@ -120,14 +124,17 @@ private[streaming] class ReceiverSchedulingPolicy {
 
     // For those receivers that don't have preferredLocation, make sure we assign at least one
     // executor to them.
+    // 不存在首选receivers,至少指定一个executor
     for (scheduledLocationsForOneReceiver <- scheduledLocations.filter(_.isEmpty)) {
       // Select the executor that has the least receivers
+      // 找出有最少receivers的executor
       val (leastScheduledExecutor, numReceivers) = numReceiversOnExecutor.minBy(_._2)
       scheduledLocationsForOneReceiver += leastScheduledExecutor
       numReceiversOnExecutor(leastScheduledExecutor) = numReceivers + 1
     }
 
     // Assign idle executors to receivers that have less executors
+    // 将空闲的executor分配给有较少的reveivers
     val idleExecutors = numReceiversOnExecutor.filter(_._2 == 0).map(_._1)
     for (executor <- idleExecutors) {
       // Assign an idle executor to the receiver that has least candidate executors.

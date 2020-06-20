@@ -403,6 +403,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
 
   /**
    * Get the list of executors excluding driver
+   * 获取Seq[host->executorId]
    */
   private def getExecutors: Seq[ExecutorCacheTaskLocation] = {
     if (ssc.sc.isLocal) {
@@ -469,6 +470,8 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
     override def receive: PartialFunction[Any, Unit] = {
       // Local messages
       case StartAllReceivers(receivers) =>
+        // 根据receivers和Seq[host->executorId]调度Receivers
+        // 返回结果[streamId->locations]
         val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers, getExecutors)
         for (receiver <- receivers) {
           val executors = scheduledLocations(receiver.streamId)
