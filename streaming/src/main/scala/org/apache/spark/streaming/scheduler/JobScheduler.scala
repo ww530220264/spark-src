@@ -70,7 +70,9 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     if (eventLoop != null) return // scheduler has already been started
 
     logDebug("Starting JobScheduler")
-    System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，启动JobScheduler""")
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |启动JobScheduler""".stripMargin)
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 

@@ -56,11 +56,10 @@ private[spark] class DirectKafkaInputDStream[K, V](
     ppc: PerPartitionConfig
   ) extends InputDStream[ConsumerRecord[K, V]](_ssc) with Logging with CanCommitOffsets {
 
-  private val initialRate = context.sparkContext.getConf.getLong(
-    "spark.streaming.backpressure.initialRate", 0)
+  private val initialRate = context.sparkContext.getConf.getLong("spark.streaming.backpressure.initialRate", 0)
   System.out.println(
     s"""---【wangwei】线程：${Thread.currentThread().getName}，
-       |InputStream：初始背压initialRate--->${initialRate}
+       |DirectKafkaInputDStream：初始背压initialRate--->${initialRate}
        |---""".stripMargin)
 
   val executorKafkaParams = {
@@ -105,8 +104,9 @@ private[spark] class DirectKafkaInputDStream[K, V](
       }
       result.put(tp, hosts.get(tp))
     }
-    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，获取brokers--------------\n" +
-      s"${result}--------------\n")
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |获取brokers:${result}""".stripMargin)
     result
   }
 
@@ -143,7 +143,9 @@ private[spark] class DirectKafkaInputDStream[K, V](
   }
 
   protected[streaming] def maxMessagesPerPartition(offsets: Map[TopicPartition, Long]): Option[Map[TopicPartition, Long]] = {
-    System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，获取每个分区最大的消息数量[一个batchInterval]""")
+    System.out.println(
+      s"""【wangwei】线程：${Thread.currentThread().getName}，
+         |获取每个分区最大的消息数量[一个batchInterval]""".stripMargin)
     // 初始化RateLimit
     // 获取最近计算的rateLimit
     val estimatedRateLimit = rateController.map { x => {
@@ -334,7 +336,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
     if (!m.isEmpty) {
       System.out.println(
         s"""【wangwei】线程：${Thread.currentThread().getName}，
-           | 从commitQueue中获取到offsetRange,进行异步commitAsync提交:${m.keySet().toArray.map(x=>(x,m.get(x))).mkString("\n")}
+           | 从commitQueue中获取到offsetRange,进行异步commitAsync提交:
+           | ${m.keySet().toArray.map(x=>(x,m.get(x))).mkString("\n")}
            |""".stripMargin)
       consumer.commitAsync(m, commitCallback.get)
     }
