@@ -326,7 +326,6 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   override def stop(): Unit = this.synchronized {
     if (kc != null) {
-      Launch command
         kc.close()
     }
   }

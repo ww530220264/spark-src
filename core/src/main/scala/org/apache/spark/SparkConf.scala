@@ -68,6 +68,7 @@ class SparkConf(loadDefaults: Boolean) extends Cloneable with Logging with Seria
   }
 
   if (loadDefaults) {
+    logInfo(s"""${Thread.currentThread().getName},从SystemProperties中加载相关参数""")
     loadFromSystemProperties(false)
   }
 
