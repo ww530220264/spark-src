@@ -107,7 +107,7 @@ private[spark] class Pool(
     for (schedulable <- sortedSchedulableQueue) {
       sortedTaskSetQueue ++= schedulable.getSortedTaskSetQueue
     }
-    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，根据调度算法对队列中的可调度对象进行排序：${sortedTaskSetQueue}")
+//    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，根据调度算法对队列中的可调度对象进行排序：${sortedTaskSetQueue}")
     sortedTaskSetQueue
   }
 

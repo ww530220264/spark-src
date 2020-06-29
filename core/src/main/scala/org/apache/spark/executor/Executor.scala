@@ -62,7 +62,6 @@ private[spark] class Executor(
   extends Logging {
 
   logInfo(s"Starting executor ID $executorId on host $executorHostname")
-  System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，启动Executor ID-->$executorId on host-->$executorHostname")
   // Application dependencies (added through SparkContext) that we've fetched so far on this node.
   // Each map holds the master's timestamp for the version of that file or JAR we got.
   private val currentFiles: HashMap[String, Long] = new HashMap[String, Long]()

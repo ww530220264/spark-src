@@ -83,6 +83,7 @@ private case class Subscribe[K, V](
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
     val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(topics)
+    // 如果当前currentOffset为空,那么使用传递给Subscribe中的offset
     val toSeek = if (currentOffsets.isEmpty) {
       offsets
     } else {
@@ -103,6 +104,7 @@ private case class Subscribe[K, V](
           logWarning("Catching NoOffsetForPartitionException since " +
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + " is none.  See KAFKA-3370")
       }
+      // 复位每个topic的partition的每个偏移量
       toSeek.asScala.foreach { case (topicPartition, offset) =>
           consumer.seek(topicPartition, offset)
       }
