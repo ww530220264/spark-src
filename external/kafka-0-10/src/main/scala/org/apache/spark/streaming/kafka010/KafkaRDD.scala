@@ -84,15 +84,26 @@ private[spark] class KafkaRDD[K, V](
   override def getPartitions: Array[Partition] = {
     // 获取kafka分区
     offsetRanges.zipWithIndex.map { case (o, i) =>
-        System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，获取kafkaRDD分区:""")
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName}，
+           | 获取kafkaRDD分区,一个topic-partition对应一个rdd分区
+           | ${o.topic}--${o.partition}--${o.fromOffset}--${o.untilOffset}
+           |--------------------------------------------------""".stripMargin)
         new KafkaRDDPartition(i, o.topic, o.partition, o.fromOffset, o.untilOffset)
     }.toArray
   }
 
   override def count(): Long =
+
     if (compacted) {
       super.count()
     } else {
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName}，
+           | 获取RDD内的记录数量:${offsetRanges.map(_.count).sum}
+           |--------------------------------------------------""".stripMargin)
       offsetRanges.map(_.count).sum
     }
 

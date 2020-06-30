@@ -59,9 +59,13 @@ object RateEstimator {
   def create(conf: SparkConf, batchInterval: Duration): RateEstimator =
     conf.get("spark.streaming.backpressure.rateEstimator", "pid") match {
       case "pid" =>
+        // 比例
         val proportional = conf.getDouble("spark.streaming.backpressure.pid.proportional", 1.0)
+        // 积分
         val integral = conf.getDouble("spark.streaming.backpressure.pid.integral", 0.2)
+        // 微分
         val derived = conf.getDouble("spark.streaming.backpressure.pid.derived", 0.0)
+        // 最小速率
         val minRate = conf.getDouble("spark.streaming.backpressure.pid.minRate", 100)
         new PIDRateEstimator(batchInterval.milliseconds, proportional, integral, derived, minRate)
 

@@ -150,10 +150,14 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
 
   /** Start the endpoint and receiver execution thread. */
   def start(): Unit = synchronized {
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | 启动ReceiverTracker..........
+         |--------------------------------------------------""".stripMargin)
     if (isTrackerStarted) {
       throw new SparkException("ReceiverTracker already started")
     }
-
     if (!receiverInputStreams.isEmpty) {
       endpoint = ssc.env.rpcEnv.setupEndpoint(
         "ReceiverTracker", new ReceiverTrackerEndpoint(ssc.env.rpcEnv))
@@ -445,8 +449,12 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
     }
 
     runDummySparkJob()
-
-    logInfo("Starting " + receivers.length + " receivers")
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |receivers数量${receivers.length}
+         | 发送StartAllReceivers(receivers)事件给ReceiverTrackerEndPoint来让他启动receivers
+         |--------------------------------------------------""".stripMargin)
     endpoint.send(StartAllReceivers(receivers))
   }
 
@@ -474,6 +482,11 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
         // 返回结果[streamId->locations]
         val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers, getExecutors)
         for (receiver <- receivers) {
+          logInfo(
+            s"""--------------------------------------------------
+               |【wangwei】线程：${Thread.currentThread().getName}，
+               | 启动Receiver--${receiver}
+               |--------------------------------------------------""".stripMargin)
           val executors = scheduledLocations(receiver.streamId)
           updateReceiverScheduledExecutors(receiver.streamId, executors)
           receiverPreferredLocations(receiver.streamId) = receiver.preferredLocation

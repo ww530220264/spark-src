@@ -80,18 +80,21 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   /** Start generation of jobs */
   def start(): Unit = synchronized {
     if (eventLoop != null) return // generator has already been started
-
     // Call checkpointWriter here to initialize it before eventLoop uses it to avoid a deadlock.
     // See SPARK-10125
     checkpointWriter
 
     eventLoop = new EventLoop[JobGeneratorEvent]("JobGenerator") {
       override protected def onReceive(event: JobGeneratorEvent): Unit = processEvent(event)
-
       override protected def onError(e: Throwable): Unit = {
         jobScheduler.reportError("Error in job generator", e)
       }
     }
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |启动...EventLoop...JobGenerator
+         |--------------------------------------------------""".stripMargin)
     eventLoop.start()
 
     if (ssc.isCheckpointPresent) {
@@ -191,7 +194,17 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   /** Starts the generator for the first time */
   private def startFirstTime() {
     val startTime = new Time(timer.getStartTime())
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |启动...DStreamGraph
+         |--------------------------------------------------""".stripMargin)
     graph.start(startTime - graph.batchDuration)
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |启动...JobGenerator中的定时器,用来定时发送GenerateJob事件
+         |--------------------------------------------------""".stripMargin)
     timer.start(startTime.milliseconds)
     logInfo("Started JobGenerator at " + startTime)
   }

@@ -35,8 +35,11 @@ import org.apache.spark.util.{EventLoop, ThreadUtils}
 
 
 private[scheduler] sealed trait JobSchedulerEvent
+
 private[scheduler] case class JobStarted(job: Job, startTime: Long) extends JobSchedulerEvent
+
 private[scheduler] case class JobCompleted(job: Job, completedTime: Long) extends JobSchedulerEvent
+
 private[scheduler] case class ErrorReported(msg: String, e: Throwable) extends JobSchedulerEvent
 
 /**
@@ -68,23 +71,33 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
 
   def start(): Unit = synchronized {
     if (eventLoop != null) return // scheduler has already been started
-
     logDebug("Starting JobScheduler")
-    System.out.println(
-      s"""【wangwei】线程：${Thread.currentThread().getName}，
-         |启动JobScheduler""".stripMargin)
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | Starting JobScheduler.............启动中
+         |--------------------------------------------------""".stripMargin)
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 
       override protected def onError(e: Throwable): Unit = reportError("Error in job scheduler", e)
     }
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | 启动事件循环......EventLoop....JobScheduler...
+         |--------------------------------------------------""".stripMargin)
     eventLoop.start()
 
     // attach rate controllers of input streams to receive batch completion updates
-    for {
-      inputDStream <- ssc.graph.getInputStreams
-      rateController <- inputDStream.rateController
-    } ssc.addStreamingListener(rateController)
+    for {inputDStream <- ssc.graph.getInputStreams; rateController <- inputDStream.rateController} {
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName}，
+           | 将速率控制器添加到流监听器总线中
+           |--------------------------------------------------""".stripMargin)
+      ssc.addStreamingListener(rateController)
+    }
 
     listenerBus.start()
     receiverTracker = new ReceiverTracker(ssc)
@@ -106,6 +119,11 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     jobGenerator.start()
     executorAllocationManager.foreach(_.start())
     logInfo("Started JobScheduler")
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | Started JobScheduler.............已启动
+         |--------------------------------------------------""".stripMargin)
   }
 
   def stop(processAllReceivedData: Boolean): Unit = synchronized {
@@ -131,7 +149,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
 
     // Wait for the queued jobs to complete if indicated
     val terminated = if (processAllReceivedData) {
-      jobExecutor.awaitTermination(1, TimeUnit.HOURS)  // just a very large period of time
+      jobExecutor.awaitTermination(1, TimeUnit.HOURS) // just a very large period of time
     } else {
       jobExecutor.awaitTermination(2, TimeUnit.SECONDS)
     }
@@ -240,6 +258,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   }
 
   private class JobHandler(job: Job) extends Runnable with Logging {
+
     import JobScheduler._
 
     def run() {
@@ -283,6 +302,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       }
     }
   }
+
 }
 
 private[streaming] object JobScheduler {

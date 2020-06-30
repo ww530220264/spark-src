@@ -500,9 +500,12 @@ class SparkContext(config: SparkConf) extends Logging {
     executorEnvs("SPARK_USER") = sparkUser
 
     for ((k, v) <- executorEnvs) {
-      logInfo(s"""------【wangwei】
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】
            |线程->${Thread.currentThread().getName}
-           |设置Executor环境变量：${k}-->${v}""".stripMargin)
+           |设置Executor环境变量：${k}-->${v}
+           |--------------------------------------------------""".stripMargin)
     }
 
     // We need to register "HeartbeatReceiver" before "createTaskScheduler" because Executor will
@@ -1510,11 +1513,12 @@ class SparkContext(config: SparkConf) extends Logging {
     val bc = env.broadcastManager.newBroadcast[T](value, isLocal)
     val callSite = getCallSite
     logInfo("Created broadcast " + bc.id + " from " + callSite.shortForm)
-    logInfo(s"""------【wangwei】
-         |线程->${Thread.currentThread().getName}，
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】: 线程->${Thread.currentThread().getName}，
          |创建广播变量：id->${bc.id},
          |创建位置->${callSite.shortForm}
-         |------""".stripMargin)
+         |--------------------------------------------------""".stripMargin)
     cleaner.foreach(_.registerBroadcastForCleanup(bc))
     bc
   }
@@ -1834,9 +1838,11 @@ class SparkContext(config: SparkConf) extends Logging {
    */
   private[spark] def persistRDD(rdd: RDD[_]) {
     logInfo(
-      s"""------【wangwei】
+      s"""--------------------------------------------------
+         |【wangwei】
          |persistRDD：RDD_id->${rdd.id}，${rdd.getCreationSite}
-         |存储级别->${rdd.getStorageLevel}""".stripMargin)
+         |存储级别->${rdd.getStorageLevel}
+         |--------------------------------------------------""".stripMargin)
     persistentRdds(rdd.id) = rdd
   }
 

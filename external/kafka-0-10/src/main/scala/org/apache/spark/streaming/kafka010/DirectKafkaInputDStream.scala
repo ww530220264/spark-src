@@ -58,42 +58,46 @@ private[spark] class DirectKafkaInputDStream[K, V](
                                                   ) extends InputDStream[ConsumerRecord[K, V]](_ssc) with Logging with CanCommitOffsets {
 
   private val initialRate = context.sparkContext.getConf.getLong("spark.streaming.backpressure.initialRate", 0)
-  System.out.println(
-    s"""---【wangwei】线程：${Thread.currentThread().getName}，
+  logInfo(
+    s"""--------------------------------------------------
+       |【wangwei】线程：${Thread.currentThread().getName}，
        |DirectKafkaInputDStream：初始背压initialRate--->${initialRate}
-       |---""".stripMargin)
+       |--------------------------------------------------""".stripMargin)
 
   val executorKafkaParams = {
     val ekp = new ju.HashMap[String, Object](consumerStrategy.executorKafkaParams)
     KafkaUtils.fixKafkaParams(ekp)
     ekp
   }
-  System.out.println(
-    s"""---【wangwei】线程：${Thread.currentThread().getName}，
+  logInfo(
+    s"""--------------------------------------------------
+       |【wangwei】线程：${Thread.currentThread().getName}，
        |InputStream：Executor Kafka参数--->${executorKafkaParams}
-       |---""".stripMargin)
-
+       |--------------------------------------------------""".stripMargin)
+  // 当前消费到的每个topic-分区的offset
   protected var currentOffsets = Map[TopicPartition, Long]()
-
+  // consumer
   @transient private var kc: Consumer[K, V] = null
-
+  // 使用消费策略初始化consumer
   def consumer(): Consumer[K, V] = this.synchronized {
     if (null == kc) {
       kc = consumerStrategy.onStart(currentOffsets.mapValues(l => new java.lang.Long(l)).asJava)
     }
     kc
   }
-
+  // 持久化接收到的数据
   override def persist(newLevel: StorageLevel): DStream[ConsumerRecord[K, V]] = {
     logError("Kafka ConsumerRecord is not serializable. " +
       "Use .map to extract fields before calling .persist or .window")
     super.persist(newLevel)
   }
-
+  // 获取每个topicPartition和partition的leader---->brokers
   protected def getBrokers = {
     val c = consumer
     val result = new ju.HashMap[TopicPartition, String]()
+    // 存放topic-partition和分区的leader
     val hosts = new ju.HashMap[TopicPartition, String]()
+    // 当前consumer分配到的topic-partitions集合迭代器
     val assignments = c.assignment().iterator()
     while (assignments.hasNext()) {
       val tp: TopicPartition = assignments.next()
@@ -106,12 +110,14 @@ private[spark] class DirectKafkaInputDStream[K, V](
       }
       result.put(tp, hosts.get(tp))
     }
-    System.out.println(
-      s"""【wangwei】线程：${Thread.currentThread().getName}，
-         |获取brokers:${result}""".stripMargin)
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |获取brokers:${result}
+         |--------------------------------------------------""".stripMargin)
     result
   }
-
+  // 获取首选location
   protected def getPreferredHosts: ju.Map[TopicPartition, String] = {
     locationStrategy match {
       case PreferBrokers => getBrokers
@@ -131,14 +137,18 @@ private[spark] class DirectKafkaInputDStream[K, V](
    * Asynchronously maintains & sends new rate limits to the receiver through the receiver tracker.
    */
   override protected[streaming] val rateController: Option[RateController] = {
-    System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，kafkaStream创建RateController,Controller中使用PIDRateEstimator""")
     if (RateController.isBackPressureEnabled(ssc.conf)) {
-      System.out.println(
-        s"""【wangwei】线程：${Thread.currentThread().getName}，
-           |inputStream启用了速率控制器:${this}
-           |""".stripMargin)
-      Some(new DirectKafkaRateController(id,
-        RateEstimator.create(ssc.conf, context.graph.batchDuration)))
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName}，
+           |DirectKafkaInputDStream使用速率估算器:PidRateEstimator创建速率控制器->DirectKafkaRateController{这个控制器也是一个监听器}:
+           |比例:${ssc.conf.getDouble("spark.streaming.backpressure.pid.proportional", 1.0)}
+           |积分:${ssc.conf.getDouble("spark.streaming.backpressure.pid.integral", 0.2)}
+           |微分:${ssc.conf.getDouble("spark.streaming.backpressure.pid.derived", 0.0)}
+           |最小速率${ssc.conf.getDouble("spark.streaming.backpressure.pid.minRate", 100)}
+           |--------------------------------------------------""".stripMargin)
+      // 使用Pid速率估算器-->创建速率控制器{这个控制器也是一个监听器}
+      Some(new DirectKafkaRateController(id, RateEstimator.create(ssc.conf, context.graph.batchDuration)))
     } else {
       None
     }
@@ -146,20 +156,18 @@ private[spark] class DirectKafkaInputDStream[K, V](
 
   protected[streaming] def maxMessagesPerPartition(offsets: Map[TopicPartition, Long]): Option[Map[TopicPartition, Long]] = {
     // 每个分区->每个分区最高的offset
-    System.out.println(
-      s"""【wangwei】线程：${Thread.currentThread().getName}，
-         |获取每个分区最大的消息数量[一个batchInterval]""".stripMargin)
     // 初始化RateLimit
     // 获取最近计算的rateLimit
     val estimatedRateLimit = rateController.map { x => {
-      val lr = x.getLatestRate()
-      if (lr > 0) lr else initialRate
+        val lr = x.getLatestRate()
+        if (lr > 0) lr else initialRate
+      }
     }
-    }
-    System.out.println(
-      s"""${Thread.currentThread().getName}
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
          |最近计算的rateLimit:${estimatedRateLimit}
-         |""".stripMargin)
+         |--------------------------------------------------""".stripMargin)
     // calculate a per-partition rate limit based on current lag
     // 根据当前partition-offset-lag计算每个分区的最大获取消息数量
     val effectiveRateLimitPerPartition = estimatedRateLimit.filter(_ > 0) match {
@@ -171,11 +179,13 @@ private[spark] class DirectKafkaInputDStream[K, V](
         }
         // 总的offset-lag
         val totalLag = lagPerPartition.values.sum
-        System.out.println(
-          s"""${Thread.currentThread().getName}
+        logInfo(
+          s"""--------------------------------------------------
+             |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+             |最近计算的rateLimit:${estimatedRateLimit}
              |每个分区lag:${lagPerPartition}
              |总的lag:${totalLag}
-             |""".stripMargin)
+             |--------------------------------------------------""".stripMargin)
         lagPerPartition.map { case (tp, lag) =>
           // 每个分区最大rate-limit:spark.streaming.kafka.maxRatePerPartition
           val maxRateLimitPerPartition = ppc.maxRatePerPartition(tp)
@@ -188,10 +198,11 @@ private[spark] class DirectKafkaInputDStream[K, V](
         }
       case None => offsets.map { case (tp, offset) => tp -> ppc.maxRatePerPartition(tp).toDouble }
     }
-    System.out.println(
-      s"""${Thread.currentThread().getName}
-         |每个分区的速率:${effectiveRateLimitPerPartition}
-         |""".stripMargin)
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+         |计算得到每个分区{每秒}的速率${effectiveRateLimitPerPartition}
+         |--------------------------------------------------""".stripMargin)
     if (effectiveRateLimitPerPartition.values.sum > 0) {
       // batchDuration秒数
       val secsPerBatch = context.graph.batchDuration.milliseconds.toDouble / 1000
@@ -255,37 +266,45 @@ private[spark] class DirectKafkaInputDStream[K, V](
     // find latest available offsets
     c.seekToEnd(currentOffsets.keySet.asJava)
     // 获取每个分区最新的可用的offset
-    System.err.println(
-      s"""${Thread.currentThread().getName},
-         |获取最新的可用的offset:${parts.map(tp => tp -> c.position(tp)).toMap}""".stripMargin)
     parts.map(tp => tp -> c.position(tp)).toMap
   }
 
   // limits the maximum number of messages per partition
   protected def clamp(offsets: Map[TopicPartition, Long]): Map[TopicPartition, Long] = {
     // offsets:每个分区-->每个分区当前最高的offset
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+         |每个分区当前最大的可用offset:${offsets}
+         |--------------------------------------------------""".stripMargin)
     maxMessagesPerPartition(offsets).map { mmp =>
       mmp.map { case (tp, messages) =>
         val uo = offsets(tp)
-        System.out.println(
-          s"""${Thread.currentThread().getName}
-             |计算的每个分区待消费的消息数量:${tp.topic()}-${tp.partition()}-${messages}
-             |当前每个分区最大的消息偏移量:${tp.topic()}-${tp.partition()}-${uo}
-             |""".stripMargin)
+        logInfo(
+          s"""--------------------------------------------------
+             |【wangwei】线程：${Thread.currentThread().getName}
+             |当前分区待消费的消息数量:${tp.topic()}-${tp.partition()}---${messages}
+             |当前分区最大的消息偏移量:${tp.topic()}-${tp.partition()}---${uo}
+             |--------------------------------------------------""".stripMargin)
         tp -> Math.min(currentOffsets(tp) + messages, uo)
       }
     }.getOrElse(offsets)
   }
 
   override def compute(validTime: Time): Option[KafkaRDD[K, V]] = {
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},执行compute获取{kafkaRdd}，
+         |--------------------------------------------------""".stripMargin)
     val untilOffsets = clamp(latestOffsets())
     // 偏移量范围
     val offsetRanges = untilOffsets.map { case (tp, uo) =>
       val fo = currentOffsets(tp) //当前topicPartition的offset  uo-限制的每个partition消息的数量+current topic partition offset
-      System.out.println(
-        s"""${Thread.currentThread().getName}
-           |最终每个分区待消费的消息数量:${tp.topic()}-${tp.partition()}-${fo}--${uo}
-           |""".stripMargin)
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+           |当前分区消费起始offset和截止offset:${tp.topic}--${tp.partition}--${fo}--${uo}
+           |--------------------------------------------------""".stripMargin)
       OffsetRange(tp.topic, tp.partition, fo, uo)
     }
     val useConsumerCache = context.conf.getBoolean("spark.streaming.kafka.consumer.cache.enabled",
@@ -307,14 +326,28 @@ private[spark] class DirectKafkaInputDStream[K, V](
       StreamInputInfo.METADATA_KEY_DESCRIPTION -> description)
     val inputInfo = StreamInputInfo(id, rdd.count, metadata)
     System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}，将本次batch interval的记录数量等元数据汇报给InputInfoTracker""")
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+         |将本次batch interval内的输入数据信息汇报给inputInfoTracker
+         |streamId:${id}
+         |rdd内记录数量:${rdd.count}
+         |描述:${description}
+         |--------------------------------------------------""".stripMargin)
     ssc.scheduler.inputInfoTracker.reportInfo(validTime, inputInfo)
-
+    // 将当前offset设置为更新后的offset
     currentOffsets = untilOffsets
+    // 提交队列中留下的offset{之前的batchJob的消费的offset}
     commitAll()
     Some(rdd)
   }
 
   override def start(): Unit = {
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName},计算每个分区准备消费最大消息数量，
+         |启动DirectKafkaInputDStream,使用start方法,创建consumer且定位到每个分区的起始offset
+         |--------------------------------------------------""".stripMargin)
     val c = consumer
     paranoidPoll(c)
     if (currentOffsets.isEmpty) {
@@ -350,7 +383,12 @@ private[spark] class DirectKafkaInputDStream[K, V](
    */
   def commitAsync(offsetRanges: Array[OffsetRange], callback: OffsetCommitCallback): Unit = {
     commitCallback.set(callback)
-    // 将offsetRanges提交到commitQueue
+    logInfo(
+      s"""--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | 将offset放入到commit队列中,下次batchJob才会从队列中取出本次offset进行异步提交
+         | offsetRanges:${offsetRanges}
+         |--------------------------------------------------""".stripMargin)
     commitQueue.addAll(ju.Arrays.asList(offsetRanges: _*))
   }
 
@@ -370,11 +408,13 @@ private[spark] class DirectKafkaInputDStream[K, V](
       osr = commitQueue.poll()
     }
     if (!m.isEmpty) {
-      System.out.println(
-        s"""【wangwei】线程：${Thread.currentThread().getName}，
-           | 从commitQueue中获取到offsetRange,进行异步commitAsync提交:
+      logInfo(
+        s"""--------------------------------------------------
+           |【wangwei】线程：${Thread.currentThread().getName}，
+           | 从commitQueue中获取队列中offsetRange,进行异步commitAsync提交:
+           | {这次提交的是之前的batchJob中产生的offset,本次的将在后面进行手动放入到队列中,然后下一次才会提交本次的offset}
            | ${m.keySet().toArray.map(x => (x, m.get(x))).mkString("\n")}
-           |""".stripMargin)
+           |--------------------------------------------------""".stripMargin)
       consumer.commitAsync(m, commitCallback.get)
     }
   }

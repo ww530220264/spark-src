@@ -577,6 +577,11 @@ class StreamingContext private[streaming] (
             // like call sites and job groups can be reset without affecting those of the
             // current thread.
             ThreadUtils.runInNewThread("streaming-start") {
+              logInfo(
+                s"""--------------------------------------------------
+                   |【wangwei】线程：${Thread.currentThread().getName}，
+                   | 新启动一个线程{streaming-start}来执行JobScheduler的启动
+                   |--------------------------------------------------""".stripMargin)
               sparkContext.setCallSite(startSite.get)
               sparkContext.clearJobGroup()
               sparkContext.setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, "false")
