@@ -7,7 +7,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka010._
 
-object SparkStreaming_Kafka {
+object SparkStreaming_Kafka_2 {
   def main(args: Array[String]): Unit = {
     val kafkaParams = Map[String, String](
       "bootstrap.servers" -> "centos7-1:9092",
