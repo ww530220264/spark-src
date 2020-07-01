@@ -578,7 +578,7 @@ class StreamingContext private[streaming] (
             // current thread.
             ThreadUtils.runInNewThread("streaming-start") {
               logInfo(
-                s"""--------------------------------------------------
+                s"""\n--------------------------------------------------
                    |【wangwei】线程：${Thread.currentThread().getName}，
                    | 新启动一个线程{streaming-start}来执行JobScheduler的启动
                    |--------------------------------------------------""".stripMargin)

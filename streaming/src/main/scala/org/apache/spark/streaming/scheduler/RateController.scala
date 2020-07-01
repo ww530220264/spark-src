@@ -67,7 +67,7 @@ private[streaming] abstract class RateController(val streamUID: Int, rateEstimat
       newRate.foreach { s =>
         rateLimit.set(s.toLong)
         System.out.println(
-          s"""--------------------------------------------------
+          s"""\n--------------------------------------------------
              |【wangwei】线程：${Thread.currentThread().getName},计算并发布新的速率{异步}：
              |processingEnd-{处理结束时间}：${time}
              |elems-{元素个数}：${elems}

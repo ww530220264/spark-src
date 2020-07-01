@@ -92,7 +92,7 @@ private[streaming] class ReceivedBlockTracker(
           getReceivedBlockQueue(receivedBlockInfo.streamId) += receivedBlockInfo
         }
         logInfo(
-          s"""--------------------------------------------------
+          s"""\n--------------------------------------------------
              |【wangwei】线程：${Thread.currentThread().getName}，ReceivedBlockTrack接收到blockInfo
              |Stream: ${receivedBlockInfo.streamId}
              |block: ${receivedBlockInfo.blockStoreResult.blockId}
@@ -120,7 +120,7 @@ private[streaming] class ReceivedBlockTracker(
       // a few thousand elements.  So we explicitly allocate a collection for serialization which
       // we know doesn't have this issue.  (See SPARK-26734).
       logInfo(
-        s"""--------------------------------------------------
+        s"""\n--------------------------------------------------
            |【wangwei】线程：${Thread.currentThread().getName}，
            |将接收到的数据blocks分配给当前batchTime:${batchTime}
            |--------------------------------------------------""".stripMargin)
@@ -130,7 +130,7 @@ private[streaming] class ReceivedBlockTracker(
       val allocatedBlocks = AllocatedBlocks(streamIdToBlocks)
       if (writeToLog(BatchAllocationEvent(batchTime, allocatedBlocks))) {
         logInfo(
-          s"""--------------------------------------------------
+          s"""\n--------------------------------------------------
              |【wangwei】线程：${Thread.currentThread().getName}，
              |获取到对应stream id对应的未分配的blocks且已经写入到WAL中之后,清空ReceivedBlockTracker中的
              |streamIdToUnallocatedBlockQueues对应stream id的queue

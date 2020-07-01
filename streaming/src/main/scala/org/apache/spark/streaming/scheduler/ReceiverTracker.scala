@@ -151,7 +151,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
   /** Start the endpoint and receiver execution thread. */
   def start(): Unit = synchronized {
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          | 启动ReceiverTracker..........
          |--------------------------------------------------""".stripMargin)
@@ -450,7 +450,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
 
     runDummySparkJob()
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          |receivers数量${receivers.length}
          | 发送StartAllReceivers(receivers)事件给ReceiverTrackerEndPoint来让他启动receivers
@@ -483,7 +483,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
         val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers, getExecutors)
         for (receiver <- receivers) {
           logInfo(
-            s"""--------------------------------------------------
+            s"""\n--------------------------------------------------
                |【wangwei】线程：${Thread.currentThread().getName}，
                | 启动Receiver--${receiver}
                |--------------------------------------------------""".stripMargin)

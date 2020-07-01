@@ -273,8 +273,10 @@ class SparkContext(config: SparkConf) extends Logging {
   private[spark] val persistentRdds = {
     val map: ConcurrentMap[Int, RDD[_]] = new MapMaker().weakValues().makeMap[Int, RDD[_]]()
     logInfo(
-      s"""【wangwei】线程：${Thread.currentThread().getName}，
-         |${this}创建跟踪所有persisted RDDs的map[Int,RDD[_]]：${map}""".stripMargin)
+      s"""\n--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |${this}创建跟踪所有persisted RDDs的map[Int,RDD[_]]：${map}
+         |--------------------------------------------------""".stripMargin)
     map.asScala
   }
 
@@ -501,7 +503,7 @@ class SparkContext(config: SparkConf) extends Logging {
 
     for ((k, v) <- executorEnvs) {
       logInfo(
-        s"""--------------------------------------------------
+        s"""\n--------------------------------------------------
            |【wangwei】
            |线程->${Thread.currentThread().getName}
            |设置Executor环境变量：${k}-->${v}
@@ -1514,7 +1516,7 @@ class SparkContext(config: SparkConf) extends Logging {
     val callSite = getCallSite
     logInfo("Created broadcast " + bc.id + " from " + callSite.shortForm)
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】: 线程->${Thread.currentThread().getName}，
          |创建广播变量：id->${bc.id},
          |创建位置->${callSite.shortForm}
@@ -1838,7 +1840,7 @@ class SparkContext(config: SparkConf) extends Logging {
    */
   private[spark] def persistRDD(rdd: RDD[_]) {
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】
          |persistRDD：RDD_id->${rdd.id}，${rdd.getCreationSite}
          |存储级别->${rdd.getStorageLevel}
@@ -1850,7 +1852,11 @@ class SparkContext(config: SparkConf) extends Logging {
    * Unpersist an RDD from memory and/or disk storage
    */
   private[spark] def unpersistRDD(rddId: Int, blocking: Boolean = true) {
-    System.err.println(s"【wangwei】线程：${Thread.currentThread().getName}，移除缓存RDD：存储创建位置：RDD_ID：${rddId}")
+    logInfo(
+      s"""\n--------------------------------------------------
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         |移除缓存RDD：存储创建位置：RDD_ID：${rddId}
+         |--------------------------------------------------""".stripMargin)
     env.blockManager.master.removeRdd(rddId, blocking)
     persistentRdds.remove(rddId)
     listenerBus.post(SparkListenerUnpersistRDD(rddId))

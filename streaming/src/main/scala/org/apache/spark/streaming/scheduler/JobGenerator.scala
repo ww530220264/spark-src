@@ -91,7 +91,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
       }
     }
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          |启动...EventLoop...JobGenerator
          |--------------------------------------------------""".stripMargin)
@@ -195,13 +195,13 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   private def startFirstTime() {
     val startTime = new Time(timer.getStartTime())
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          |启动...DStreamGraph
          |--------------------------------------------------""".stripMargin)
     graph.start(startTime - graph.batchDuration)
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          |启动...JobGenerator中的定时器,用来定时发送GenerateJob事件
          |--------------------------------------------------""".stripMargin)

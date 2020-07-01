@@ -85,7 +85,7 @@ private[spark] class KafkaRDD[K, V](
     // 获取kafka分区
     offsetRanges.zipWithIndex.map { case (o, i) =>
       logInfo(
-        s"""--------------------------------------------------
+        s"""\n--------------------------------------------------
            |【wangwei】线程：${Thread.currentThread().getName}，
            | 获取kafkaRDD分区,一个topic-partition对应一个rdd分区
            | ${o.topic}--${o.partition}--${o.fromOffset}--${o.untilOffset}
@@ -100,7 +100,7 @@ private[spark] class KafkaRDD[K, V](
       super.count()
     } else {
       logInfo(
-        s"""--------------------------------------------------
+        s"""\n--------------------------------------------------
            |【wangwei】线程：${Thread.currentThread().getName}，
            | 获取RDD内的记录数量:${offsetRanges.map(_.count).sum}
            |--------------------------------------------------""".stripMargin)

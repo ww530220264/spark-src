@@ -73,7 +73,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     if (eventLoop != null) return // scheduler has already been started
     logDebug("Starting JobScheduler")
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          | Starting JobScheduler.............启动中
          |--------------------------------------------------""".stripMargin)
@@ -83,7 +83,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       override protected def onError(e: Throwable): Unit = reportError("Error in job scheduler", e)
     }
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          | 启动事件循环......EventLoop....JobScheduler...
          |--------------------------------------------------""".stripMargin)
@@ -92,7 +92,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     // attach rate controllers of input streams to receive batch completion updates
     for {inputDStream <- ssc.graph.getInputStreams; rateController <- inputDStream.rateController} {
       logInfo(
-        s"""--------------------------------------------------
+        s"""\n--------------------------------------------------
            |【wangwei】线程：${Thread.currentThread().getName}，
            | 将速率控制器添加到流监听器总线中
            |--------------------------------------------------""".stripMargin)
@@ -120,7 +120,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
     executorAllocationManager.foreach(_.start())
     logInfo("Started JobScheduler")
     logInfo(
-      s"""--------------------------------------------------
+      s"""\n--------------------------------------------------
          |【wangwei】线程：${Thread.currentThread().getName}，
          | Started JobScheduler.............已启动
          |--------------------------------------------------""".stripMargin)
