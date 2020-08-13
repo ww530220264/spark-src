@@ -25,8 +25,8 @@ object DATAFRAME_1_Overview {
 //      .map(x => (x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7), x(8), x(9), x(10), x(11), x(12)))
 //    // 方式1：如果不加参数的话，字段名称默认为_1,_2...字段类型为String
 //    println("RDD转DataFrame：df1")
-//    val df1 = tupleRDD.toDF("commentCount", "lastActivityDate",
-//      "ownerUserId", "body", "score", "creationDate", "viewCount", "title",
+//    val df1 = .toDF("commentCount", "lastActivityDate",
+//      "ownerUserId", "body", "score", "creationDtupleRDDate", "viewCount", "title",
 //      "tags", "answerCount", "acceptedAnswerId", "postTypeId", "id")
 //    df1.printSchema()
 //    df1.show(10)

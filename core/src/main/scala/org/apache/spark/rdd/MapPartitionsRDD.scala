@@ -49,6 +49,7 @@ private[spark] class MapPartitionsRDD[U: ClassTag, T: ClassTag](
   override def getPartitions: Array[Partition] = firstParent[T].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[U] =
+    // 获取第一个parentRDD的对应分区的迭代数据,并应用map函数
     f(context, split.index, firstParent[T].iterator(split, context))
 
   override def clearDependencies() {

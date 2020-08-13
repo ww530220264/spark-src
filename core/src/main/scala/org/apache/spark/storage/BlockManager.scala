@@ -723,6 +723,7 @@ private[spark] class BlockManager(
   }
 
   /**
+   * 从其他远程节点的blockmanager获取block的序列化字节数据
    * Get block from remote block managers as serialized bytes.
    */
   def getRemoteBytes(blockId: BlockId): Option[ChunkedByteBuffer] = {
@@ -734,13 +735,15 @@ private[spark] class BlockManager(
     require(blockId != null, "BlockId is null")
     var runningFailureCount = 0
     var totalFailureCount = 0
-
+    // 所有的blocks在driver端注册了
     // Because all the remote blocks are registered in driver, it is not necessary to ask
     // all the slave executors to get block status.
     val locationsAndStatus = master.getLocationsAndStatus(blockId)
+    // block大小
     val blockSize = locationsAndStatus.map { b =>
       b.status.diskSize.max(b.status.memSize)
     }.getOrElse(0L)
+    // block locations
     val blockLocations = locationsAndStatus.map(_.locations).getOrElse(Seq.empty)
 
     // If the block size is above the threshold, we should pass our FileManger to
