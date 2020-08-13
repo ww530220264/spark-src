@@ -212,7 +212,7 @@ object UnifiedMemoryManager {
     val systemMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
     val reservedMemory = conf.getLong("spark.testing.reservedMemory",
       if (conf.contains("spark.testing")) 0 else RESERVED_SYSTEM_MEMORY_BYTES)
-    val minSystemMemory = (reservedMemory * 1.5).ceil.toLong
+    val minSystemMemory = (reservedMemory * 1.5).ceil.toLong // 最小
     if (systemMemory < minSystemMemory) {
       throw new IllegalArgumentException(s"System memory $systemMemory must " +
         s"be at least $minSystemMemory. Please increase heap size using the --driver-memory " +
@@ -227,10 +227,15 @@ object UnifiedMemoryManager {
           s"--executor-memory option or spark.executor.memory in Spark configuration.")
       }
     }
-    val usableMemory = systemMemory - reservedMemory
+    val usableMemory = systemMemory - reservedMemory // 可用内存[storage + execution]
     val memoryFraction = conf.getDouble("spark.memory.fraction", 0.6)
-    System.out.println(s"【wangwei】线程：${Thread.currentThread().getName}，" +
-      s"systemMemory：${systemMemory},reservedMemory：${reservedMemory},minSystemMemory：${minSystemMemory},usableMemory：${usableMemory},memoryFraction：${memoryFraction},execution+storage：${(usableMemory * memoryFraction).toLong}")
+    System.out.println(s"""【wangwei】线程：${Thread.currentThread().getName}
+      |systemMemory：${systemMemory},
+      |reservedMemory：${reservedMemory},
+      |minSystemMemory：${minSystemMemory},
+      |usableMemory：${usableMemory},
+      |memoryFraction：${memoryFraction},
+      |execution+storage：${(usableMemory * memoryFraction).toLong}""".stripMargin)
     (usableMemory * memoryFraction).toLong
   }
 }

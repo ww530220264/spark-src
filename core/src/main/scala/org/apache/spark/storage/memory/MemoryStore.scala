@@ -189,7 +189,7 @@ private[spark] class MemoryStore(
    */
   private def putIterator[T](
       blockId: BlockId,
-      values: Iterator[T],
+      values: Iterator[T], // 分区元素迭代器
       classTag: ClassTag[T],
       memoryMode: MemoryMode,
       valuesHolder: ValuesHolder[T]): Either[Long, Long] = {
@@ -202,14 +202,14 @@ private[spark] class MemoryStore(
     // Initial per-task memory to request for unrolling blocks (bytes).
     val initialMemoryThreshold = unrollMemoryThreshold
     // How often to check whether we need to request more memory
-    val memoryCheckPeriod = conf.get(UNROLL_MEMORY_CHECK_PERIOD)
+    val memoryCheckPeriod = conf.get(UNROLL_MEMORY_CHECK_PERIOD) // 每隔多少个元素检查一次是否需要更多的内存
     // Memory currently reserved by this task for this particular unrolling operation
     var memoryThreshold = initialMemoryThreshold
     // Memory to request as a multiple of current vector size
     val memoryGrowthFactor = conf.get(UNROLL_MEMORY_GROWTH_FACTOR)
     // Keep track of unroll memory used by this particular block / putIterator() operation
     var unrollMemoryUsedByThisBlock = 0L
-
+    // 申请初始内存
     // Request enough memory to begin unrolling
     keepUnrolling =
       reserveUnrollMemoryForThisTask(blockId, initialMemoryThreshold, memoryMode)
@@ -224,21 +224,21 @@ private[spark] class MemoryStore(
     // Unroll this block safely, checking whether we have exceeded our threshold periodically
     while (values.hasNext && keepUnrolling) {
       valuesHolder.storeValue(values.next())
-      if (elementsUnrolled % memoryCheckPeriod == 0) {
-        val currentSize = valuesHolder.estimatedSize()
+      if (elementsUnrolled % memoryCheckPeriod == 0) { // 是否需要检查需要更多的内存
+        val currentSize = valuesHolder.estimatedSize() // 当前展开的元素的内存大小
         // If our vector's size has exceeded the threshold, request more memory
-        if (currentSize >= memoryThreshold) {
-          val amountToRequest = (currentSize * memoryGrowthFactor - memoryThreshold).toLong
+        if (currentSize >= memoryThreshold) { // 当前展开的元素内存大小 >= 阈值
+          val amountToRequest = (currentSize * memoryGrowthFactor - memoryThreshold).toLong // 即将申请的内存 = 当前内存大小的倍数 - 当前阈值
           keepUnrolling =
             reserveUnrollMemoryForThisTask(blockId, amountToRequest, memoryMode)
           if (keepUnrolling) {
-            unrollMemoryUsedByThisBlock += amountToRequest
+            unrollMemoryUsedByThisBlock += amountToRequest // 该block占用的用来展开的内存[初始的+后来申请的]
           }
           // New threshold is currentSize * memoryGrowthFactor
           memoryThreshold += amountToRequest
         }
       }
-      elementsUnrolled += 1
+      elementsUnrolled += 1 // 已展开的元素 + 1
     }
 
     // Make sure that we have enough memory to store the block. By this point, it is possible that
@@ -246,10 +246,10 @@ private[spark] class MemoryStore(
     // perform one final call to attempt to allocate additional memory if necessary.
     if (keepUnrolling) {
       val entryBuilder = valuesHolder.getBuilder()
-      val size = entryBuilder.preciseSize
-      if (size > unrollMemoryUsedByThisBlock) {
-        val amountToRequest = size - unrollMemoryUsedByThisBlock
-        keepUnrolling = reserveUnrollMemoryForThisTask(blockId, amountToRequest, memoryMode)
+      val size = entryBuilder.preciseSize // 计算精确的内存大小
+      if (size > unrollMemoryUsedByThisBlock) { // 如果实际大小 > 当前block使用的内存大小
+        val amountToRequest = size - unrollMemoryUsedByThisBlock // 差值
+        keepUnrolling = reserveUnrollMemoryForThisTask(blockId, amountToRequest, memoryMode) // 为该task储备差值大小的内存
         if (keepUnrolling) {
           unrollMemoryUsedByThisBlock += amountToRequest
         }
@@ -259,7 +259,9 @@ private[spark] class MemoryStore(
         val entry = entryBuilder.build()
         // Synchronize so that transfer is atomic
         memoryManager.synchronized {
+          // 释放当前block使用的用来展开的内存大小
           releaseUnrollMemoryForThisTask(memoryMode, unrollMemoryUsedByThisBlock)
+          // 获取指定大小的内存用来缓存当前block,必要时踢出现有的block
           val success = memoryManager.acquireStorageMemory(blockId, entry.size, memoryMode)
           assert(success, "transferring unroll memory to storage memory failed")
         }

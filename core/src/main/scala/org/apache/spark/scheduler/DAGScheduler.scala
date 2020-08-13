@@ -340,9 +340,10 @@ private[spark] class DAGScheduler(
     shuffleIdToMapStage.get(shuffleDep.shuffleId) match {
       case Some(stage) =>
         stage
-
+      // 创建ShuffleMapStage并在MapOutputTracker中注册该shuffle
       case None =>
         // Create stages for all missing ancestor shuffle dependencies.
+        // 获取所有的parent shuffleDeps
         getMissingAncestorShuffleDependencies(shuffleDep.rdd).foreach { dep =>
           // Even though getMissingAncestorShuffleDependencies only returns shuffle dependencies
           // that were not already in shuffleIdToMapStage, it's possible that by the time we
@@ -385,7 +386,7 @@ private[spark] class DAGScheduler(
     checkBarrierStageWithNumSlots(rdd)
     checkBarrierStageWithRDDChainPattern(rdd, rdd.getNumPartitions)
     val numTasks = rdd.partitions.length
-    val parents = getOrCreateParentStages(rdd, jobId)
+    val parents = getOrCreateParentStages(rdd, jobId) // 所有的parent ShuffleMapStages
     val id = nextStageId.getAndIncrement()
     val stage = new ShuffleMapStage(
       id, rdd, numTasks, parents, jobId, rdd.creationSite, shuffleDep, mapOutputTracker)
@@ -719,10 +720,10 @@ private[spark] class DAGScheduler(
    */
   def runJob[T, U](
       rdd: RDD[T],
-      func: (TaskContext, Iterator[T]) => U,
+      func: (TaskContext, Iterator[T]) => U, // func = (iterator) => iterator.toArray
       partitions: Seq[Int],
       callSite: CallSite,
-      resultHandler: (Int, U) => Unit,
+      resultHandler: (Int, U) => Unit, // resultHandler = (index,res) = results(index) = res
       properties: Properties): Unit = {
     val start = System.nanoTime
     val waiter = submitJob(rdd, func, partitions, callSite, resultHandler, properties)
@@ -1087,6 +1088,7 @@ private[spark] class DAGScheduler(
     logDebug("submitMissingTasks(" + stage + ")")
 
     // First figure out the indexes of partition ids to compute.
+    // 找出需要计算的分区s
     val partitionsToCompute: Seq[Int] = stage.findMissingPartitions()
 
     // Use the scheduling pool, job group, description, etc. from an ActiveJob associated
@@ -1098,13 +1100,16 @@ private[spark] class DAGScheduler(
     // serializable. If tasks are not serializable, a SparkListenerStageCompleted event
     // will be posted, which should always come after a corresponding SparkListenerStageSubmitted
     // event.
+    // 初始化stage状态
     stage match {
       case s: ShuffleMapStage =>
+        // stage输出协调器
         outputCommitCoordinator.stageStart(stage = s.id, maxPartitionId = s.numPartitions - 1)
       case s: ResultStage =>
         outputCommitCoordinator.stageStart(
           stage = s.id, maxPartitionId = s.rdd.partitions.length - 1)
     }
+    // 获取task首先运行位置
     val taskIdToLocations: Map[Int, Seq[TaskLocation]] = try {
       stage match {
         case s: ShuffleMapStage =>
@@ -1153,7 +1158,7 @@ private[spark] class DAGScheduler(
         taskBinaryBytes = stage match {
           case stage: ShuffleMapStage =>
             JavaUtils.bufferToArray(
-              closureSerializer.serialize((stage.rdd, stage.shuffleDep): AnyRef))
+              closureSerializer.serialize((stage.rdd, stage.shuffleDep): AnyRef)) // 序列化stage的rdd和shuffleDep
           case stage: ResultStage =>
             JavaUtils.bufferToArray(closureSerializer.serialize((stage.rdd, stage.func): AnyRef))
         }
@@ -1184,9 +1189,10 @@ private[spark] class DAGScheduler(
         case stage: ShuffleMapStage =>
           stage.pendingPartitions.clear()
           partitionsToCompute.map { id =>
-            val locs = taskIdToLocations(id)
+            val locs = taskIdToLocations(id) // 每个分区的task的位置
             val part = partitions(id)
             stage.pendingPartitions += id
+            // 为每个待计算的分区创建ShuffleMapTask
             new ShuffleMapTask(stage.id, stage.latestInfo.attemptNumber,
               taskBinary, part, locs, properties, serializedTaskMetrics, Option(jobId),
               Option(sc.applicationId), sc.applicationAttemptId, stage.rdd.isBarrier())

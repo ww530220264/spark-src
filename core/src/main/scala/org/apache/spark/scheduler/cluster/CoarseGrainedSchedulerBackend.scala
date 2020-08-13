@@ -240,12 +240,15 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
       // Make sure no executor is killed while some task is launching on it
       val taskDescs = withLock {
         // Filter out executors under killing
-        val activeExecutors = executorDataMap.filterKeys(executorIsAlive)
+        // executorID--->executorInfo
+        val activeExecutors = executorDataMap.filterKeys(executorIsAlive) // 存活的executor
         val workOffers = activeExecutors.map {
           case (id, executorData) =>
+            // 封装为Executor上可用的资源信息
             new WorkerOffer(id, executorData.executorHost, executorData.freeCores,
               Some(executorData.executorAddress.hostPort))
         }.toIndexedSeq
+        //
         scheduler.resourceOffers(workOffers)
       }
       if (!taskDescs.isEmpty) {

@@ -56,6 +56,8 @@ class WindowedDStream[T: ClassTag](
     // Do not let this windowed DStream be persisted as windowed (union-ed) RDDs share underlying
     // RDDs and persisting the windowed RDDs would store numerous copies of the underlying data.
     // Instead control the persistence of the parent DStream.
+    // 不要让窗口DStream被持久化,因为Window DStream的RDD共享底层的RDD,
+    // 持久化Window DStream将存储基础数据的大量副本,而是控制父级数据流的持久性
     parent.persist(level)
     this
   }

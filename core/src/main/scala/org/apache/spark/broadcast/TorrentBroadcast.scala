@@ -68,6 +68,7 @@ private[spark] class TorrentBroadcast[T: ClassTag](obj: T, id: Long)
   /** The compression codec to use, or None if compression is disabled */
   @transient private var compressionCodec: Option[CompressionCodec] = _
   /** Size of each block. Default value is 4MB.  This value is only read by the broadcaster. */
+  // block
   @transient private var blockSize: Int = _
 
   private def setConf(conf: SparkConf) {

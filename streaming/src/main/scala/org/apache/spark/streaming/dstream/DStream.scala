@@ -274,12 +274,14 @@ abstract class DStream[T: ClassTag] (
     )
 
     dependencies.foreach(_.validateAtStart())
-
+    logInfo(s"\n-------------Stream信息 start--------------------")
+    logInfo(s"${this}")
     logInfo(s"Slide time = $slideDuration")
     logInfo(s"Storage level = ${storageLevel.description}")
     logInfo(s"Checkpoint interval = $checkpointDuration")
     logInfo(s"Remember interval = $rememberDuration")
     logInfo(s"Initialized and validated $this")
+    logInfo(s"-------------Stream信息 end--------------------")
   }
 
   private[streaming] def setContext(s: StreamingContext) {
@@ -309,6 +311,12 @@ abstract class DStream[T: ClassTag] (
 
   /** Checks whether the 'time' is valid wrt slideDuration for generating RDD */
   private[streaming] def isTimeValid(time: Time): Boolean = {
+    logInfo(
+      s"""\n-------校验当前触发job生成的time有效性-----------
+         |inputStream: ${this}
+         |【wangwei】线程：${Thread.currentThread().getName}，
+         | Starting JobScheduler.............启动中
+         |--------------------------------------------------""".stripMargin)
     if (!isInitialized) {
       throw new SparkException (this + " has not been initialized")
     } else if (time <= zeroTime || ! (time - zeroTime).isMultipleOf(slideDuration)) {
