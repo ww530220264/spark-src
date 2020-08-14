@@ -444,7 +444,7 @@ private[spark] class MemoryStore(
     assert(space > 0)
     memoryManager.synchronized {
       var freedMemory = 0L
-      val rddToAdd = blockId.flatMap(getRddId)
+      val rddToAdd = blockId.flatMap(getRddId) // 获取当前block的rdd的id
       val selectedBlocks = new ArrayBuffer[BlockId]
       def blockIsEvictable(blockId: BlockId, entry: MemoryEntry[_]): Boolean = {
         entry.memoryMode == memoryMode && (rddToAdd.isEmpty || rddToAdd != getRddId(blockId))

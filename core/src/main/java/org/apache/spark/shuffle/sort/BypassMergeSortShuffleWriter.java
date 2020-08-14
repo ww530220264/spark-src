@@ -134,9 +134,9 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     partitionWriterSegments = new FileSegment[numPartitions];
     for (int i = 0; i < numPartitions; i++) {
       final Tuple2<TempShuffleBlockId, File> tempShuffleBlockIdPlusFile =
-        blockManager.diskBlockManager().createTempShuffleBlock();
-      final File file = tempShuffleBlockIdPlusFile._2();
-      final BlockId blockId = tempShuffleBlockIdPlusFile._1();
+        blockManager.diskBlockManager().createTempShuffleBlock(); // 创建一个唯一的blockID和对应的临时文件
+      final File file = tempShuffleBlockIdPlusFile._2(); // 临时文件
+      final BlockId blockId = tempShuffleBlockIdPlusFile._1(); // blockID
       partitionWriters[i] =
         blockManager.getDiskWriter(blockId, file, serInstance, fileBufferSize, writeMetrics);
     }
@@ -146,9 +146,9 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     writeMetrics.incWriteTime(System.nanoTime() - openStartTime);
 
     while (records.hasNext()) {
-      final Product2<K, V> record = records.next();
-      final K key = record._1();
-      partitionWriters[partitioner.getPartition(key)].write(key, record._2());
+      final Product2<K, V> record = records.next(); // 获取数据
+      final K key = record._1();  // 数据的key
+      partitionWriters[partitioner.getPartition(key)].write(key, record._2()); // 判断分区->使用对应分区writer写数据到对应的临时文件
     }
 
     for (int i = 0; i < numPartitions; i++) {
@@ -161,7 +161,7 @@ final class BypassMergeSortShuffleWriter<K, V> extends ShuffleWriter<K, V> {
     File tmp = Utils.tempFileWith(output);
     try {
       partitionLengths = writePartitionedFile(tmp);
-      shuffleBlockResolver.writeIndexFileAndCommit(shuffleId, mapId, partitionLengths, tmp);
+      shuffleBlockResolver.writeIndexFileAndCommit(shuffleId, mapId, partitionLengths, tmp); // 写索引文件
     } finally {
       if (tmp.exists() && !tmp.delete()) {
         logger.error("Error while deleting temp file {}", tmp.getAbsolutePath());

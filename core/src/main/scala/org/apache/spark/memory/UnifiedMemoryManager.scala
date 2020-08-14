@@ -46,8 +46,8 @@ import org.apache.spark.storage.BlockId
  */
 private[spark] class UnifiedMemoryManager private[memory] (
     conf: SparkConf,
-    val maxHeapMemory: Long,
-    onHeapStorageRegionSize: Long,
+    val maxHeapMemory: Long, // storage + execution
+    onHeapStorageRegionSize: Long, // storage配置大小
     numCores: Int)
   extends MemoryManager(
     conf,
@@ -113,8 +113,8 @@ private[spark] class UnifiedMemoryManager private[memory] (
         // has grown to become larger than `storageRegionSize`, we can evict blocks and reclaim
         // the memory that storage has borrowed from execution.
         val memoryReclaimableFromStorage = math.max(
-          storagePool.memoryFree,
-          storagePool.poolSize - storageRegionSize)
+          storagePool.memoryFree, // 存储内存当前可用空间
+          storagePool.poolSize - storageRegionSize) // 存储内存次当前大小 - 存储内存配置大小 = 存储内存从执行内存借的内存大小
         if (memoryReclaimableFromStorage > 0) {
           // Only reclaim as much space as is necessary and available:
           val spaceToReclaim = storagePool.freeSpaceToShrinkPool(

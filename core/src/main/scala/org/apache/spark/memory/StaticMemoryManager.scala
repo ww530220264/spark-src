@@ -29,8 +29,8 @@ import org.apache.spark.storage.BlockId
  */
 private[spark] class StaticMemoryManager(
     conf: SparkConf,
-    maxOnHeapExecutionMemory: Long,
-    override val maxOnHeapStorageMemory: Long,
+    maxOnHeapExecutionMemory: Long, // execution
+    override val maxOnHeapStorageMemory: Long,  // storage
     numCores: Int)
   extends MemoryManager(
     conf,
@@ -79,14 +79,16 @@ private[spark] class StaticMemoryManager(
       memoryMode: MemoryMode): Boolean = synchronized {
     require(memoryMode != MemoryMode.OFF_HEAP,
       "StaticMemoryManager does not support off-heap unroll memory")
-    val currentUnrollMemory = onHeapStorageMemoryPool.memoryStore.currentUnrollMemory
-    val freeMemory = onHeapStorageMemoryPool.memoryFree
+    val currentUnrollMemory = onHeapStorageMemoryPool.memoryStore.currentUnrollMemory // storage当前使用的unroll内存大小[heap+off-heap上的]
+    val freeMemory = onHeapStorageMemoryPool.memoryFree // storage空闲内存大小
     // When unrolling, we will use all of the existing free memory, and, if necessary,
     // some extra space freed from evicting cached blocks. We must place a cap on the
     // amount of memory to be evicted by unrolling, however, otherwise unrolling one
     // big block can blow away the entire cache.
+    // 最大需要释放的内存
     val maxNumBytesToFree = math.max(0, maxUnrollMemory - currentUnrollMemory - freeMemory)
     // Keep it within the range 0 <= X <= maxNumBytesToFree
+    // 实际需要释放的内存
     val numBytesToFree = math.max(0, math.min(maxNumBytesToFree, numBytes - freeMemory))
     onHeapStorageMemoryPool.acquireMemory(blockId, numBytes, numBytesToFree)
   }

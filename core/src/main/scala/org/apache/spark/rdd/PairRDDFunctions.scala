@@ -88,7 +88,7 @@ class PairRDDFunctions[K, V](self: RDD[(K, V)])
       self.context.clean(createCombiner),
       self.context.clean(mergeValue),
       self.context.clean(mergeCombiners))
-    if (self.partitioner == Some(partitioner)) {
+    if (self.partitioner == Some(partitioner)) { // 如果当前rdd的分区器==传入的分区器,直接对当前RDD的每个分区的元素执行聚合操作
       self.mapPartitions(iter => {
         val context = TaskContext.get()
         new InterruptibleIterator(context, aggregator.combineValuesByKey(iter, context))
@@ -218,7 +218,7 @@ class PairRDDFunctions[K, V](self: RDD[(K, V)])
     lazy val cachedSerializer = SparkEnv.get.serializer.newInstance()
     val createZero = () => cachedSerializer.deserialize[V](ByteBuffer.wrap(zeroArray))
 
-    val cleanedFunc = self.context.clean(func)
+    val cleanedFunc = self.context.clean(func) // eg: _+_
     combineByKeyWithClassTag[V]((v: V) => cleanedFunc(createZero(), v),
       cleanedFunc, cleanedFunc, partitioner)
   }

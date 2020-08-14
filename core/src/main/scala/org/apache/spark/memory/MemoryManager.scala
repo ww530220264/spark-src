@@ -52,15 +52,15 @@ private[spark] abstract class MemoryManager(
   @GuardedBy("this")
   protected val offHeapExecutionMemoryPool = new ExecutionMemoryPool(this, MemoryMode.OFF_HEAP)
 
-  onHeapStorageMemoryPool.incrementPoolSize(onHeapStorageMemory)
-  onHeapExecutionMemoryPool.incrementPoolSize(onHeapExecutionMemory)
+  onHeapStorageMemoryPool.incrementPoolSize(onHeapStorageMemory) // 堆内存储内存
+  onHeapExecutionMemoryPool.incrementPoolSize(onHeapExecutionMemory)  // 堆内执行内存
 
-  protected[this] val maxOffHeapMemory = conf.get(MEMORY_OFFHEAP_SIZE)
-  protected[this] val offHeapStorageMemory =
+  protected[this] val maxOffHeapMemory = conf.get(MEMORY_OFFHEAP_SIZE) // 堆外off-heap内存大小
+  protected[this] val offHeapStorageMemory = // 堆外off-heap存储内存
     (maxOffHeapMemory * conf.getDouble("spark.memory.storageFraction", 0.5)).toLong
 
-  offHeapExecutionMemoryPool.incrementPoolSize(maxOffHeapMemory - offHeapStorageMemory)
-  offHeapStorageMemoryPool.incrementPoolSize(offHeapStorageMemory)
+  offHeapExecutionMemoryPool.incrementPoolSize(maxOffHeapMemory - offHeapStorageMemory) // 初始化堆外off-heap执行内存
+  offHeapStorageMemoryPool.incrementPoolSize(offHeapStorageMemory) // 初始化堆外off-heap存储内存
 
   /**
    * Total available on heap memory for storage, in bytes. This amount can vary over time,
@@ -137,6 +137,7 @@ private[spark] abstract class MemoryManager(
    * @return the number of bytes freed.
    */
   private[memory] def releaseAllExecutionMemoryForTask(taskAttemptId: Long): Long = synchronized {
+    // 释放任务的堆内执行内存+释放堆外off-heap执行内存
     onHeapExecutionMemoryPool.releaseAllMemoryForTask(taskAttemptId) +
       offHeapExecutionMemoryPool.releaseAllMemoryForTask(taskAttemptId)
   }
@@ -155,6 +156,7 @@ private[spark] abstract class MemoryManager(
    * Release all storage memory acquired.
    */
   final def releaseAllStorageMemory(): Unit = synchronized {
+    // 释放所有的存储内存
     onHeapStorageMemoryPool.releaseAllMemory()
     offHeapStorageMemoryPool.releaseAllMemory()
   }
@@ -163,6 +165,7 @@ private[spark] abstract class MemoryManager(
    * Release N bytes of unroll memory.
    */
   final def releaseUnrollMemory(numBytes: Long, memoryMode: MemoryMode): Unit = synchronized {
+    // 释放unroll内存
     releaseStorageMemory(numBytes, memoryMode)
   }
 
@@ -170,6 +173,7 @@ private[spark] abstract class MemoryManager(
    * Execution memory currently in use, in bytes.
    */
   final def executionMemoryUsed: Long = synchronized {
+    // 当前使用的执行内存[堆内+堆外]
     onHeapExecutionMemoryPool.memoryUsed + offHeapExecutionMemoryPool.memoryUsed
   }
 
@@ -177,6 +181,7 @@ private[spark] abstract class MemoryManager(
    * Storage memory currently in use, in bytes.
    */
   final def storageMemoryUsed: Long = synchronized {
+    // 当前使用的存储内存[堆内+堆外]
     onHeapStorageMemoryPool.memoryUsed + offHeapStorageMemoryPool.memoryUsed
   }
 
@@ -184,6 +189,7 @@ private[spark] abstract class MemoryManager(
    * Returns the execution memory consumption, in bytes, for the given task.
    */
   private[memory] def getExecutionMemoryUsageForTask(taskAttemptId: Long): Long = synchronized {
+    // 返回该任务的执行内存消耗[堆内+堆外]
     onHeapExecutionMemoryPool.getMemoryUsageForTask(taskAttemptId) +
       offHeapExecutionMemoryPool.getMemoryUsageForTask(taskAttemptId)
   }

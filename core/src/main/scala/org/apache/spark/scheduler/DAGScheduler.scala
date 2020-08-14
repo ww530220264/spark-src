@@ -343,7 +343,7 @@ private[spark] class DAGScheduler(
       // 创建ShuffleMapStage并在MapOutputTracker中注册该shuffle
       case None =>
         // Create stages for all missing ancestor shuffle dependencies.
-        // 获取所有的parent shuffleDeps
+        // 获取所有的parent shuffleDeps,并创建所有的parent ShuffleMapStage
         getMissingAncestorShuffleDependencies(shuffleDep.rdd).foreach { dep =>
           // Even though getMissingAncestorShuffleDependencies only returns shuffle dependencies
           // that were not already in shuffleIdToMapStage, it's possible that by the time we
@@ -355,7 +355,7 @@ private[spark] class DAGScheduler(
           }
         }
         // Finally, create a stage for the given shuffle dependency.
-        createShuffleMapStage(shuffleDep, firstJobId)
+        createShuffleMapStage(shuffleDep, firstJobId) // 最后根据当前shuffle dep创建ShuffleMapStage
     }
   }
 
@@ -458,13 +458,13 @@ private[spark] class DAGScheduler(
   /**
    * Get or create the list of parent stages for a given RDD.  The new Stages will be created with
    * the provided firstJobId.
-   */
+   */// 获取直接parent shuffle Deps 然后为每个shuffle dep创建ShuffleMapStage
   private def getOrCreateParentStages(rdd: RDD[_], firstJobId: Int): List[Stage] = {
     getShuffleDependencies(rdd).map { shuffleDep =>
       getOrCreateShuffleMapStage(shuffleDep, firstJobId)
     }.toList
   }
-
+  // 获取所有的Shuffle deps
   /** Find ancestor shuffle dependencies that are not registered in shuffleToMapStage yet */
   private def getMissingAncestorShuffleDependencies(
       rdd: RDD[_]): ArrayStack[ShuffleDependency[_, _, _]] = {

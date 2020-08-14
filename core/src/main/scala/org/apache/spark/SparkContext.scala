@@ -2123,7 +2123,7 @@ class SparkContext(config: SparkConf) extends Logging {
                               rdd: RDD[T],
                               func: (TaskContext, Iterator[T]) => U,
                               partitions: Seq[Int]): Array[U] = {
-    val results = new Array[U](partitions.size)
+    val results = new Array[U](partitions.size) // func: (TaskContext, Iterator[T]) => iterator.toArray
     runJob[T, U](rdd, func, partitions, (index, res) => results(index) = res)
     results
   }
@@ -2142,7 +2142,7 @@ class SparkContext(config: SparkConf) extends Logging {
                               rdd: RDD[T],
                               func: Iterator[T] => U,
                               partitions: Seq[Int]): Array[U] = {
-    val cleanedFunc = clean(func)
+    val cleanedFunc = clean(func) // func = iterator => iterator.toArray
     runJob(rdd, (ctx: TaskContext, it: Iterator[T]) => cleanedFunc(it), partitions)
   }
 
@@ -2168,7 +2168,7 @@ class SparkContext(config: SparkConf) extends Logging {
    *         a result from one partition)
    */
   def runJob[T, U: ClassTag](rdd: RDD[T], func: Iterator[T] => U): Array[U] = {
-    runJob(rdd, func, 0 until rdd.partitions.length)
+    runJob(rdd, func, 0 until rdd.partitions.length) // func = iterator => iterator.toArray
   }
 
   /**

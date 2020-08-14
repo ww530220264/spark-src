@@ -69,6 +69,7 @@ private[memory] class StorageMemoryPool(
    * @return whether all N bytes were successfully granted.
    */
   def acquireMemory(blockId: BlockId, numBytes: Long): Boolean = lock.synchronized {
+    // 如果申请的内存>空闲的,则计算差值,作为要释放相应的内存才能满足此次申请
     val numBytesToFree = math.max(0, numBytes - memoryFree)
     acquireMemory(blockId, numBytes, numBytesToFree)
   }
@@ -89,6 +90,7 @@ private[memory] class StorageMemoryPool(
     assert(numBytesToFree >= 0)
     assert(memoryUsed <= poolSize)
     if (numBytesToFree > 0) {
+      // 踢出一些block以满足本次申请,如果被踢出的block存储level支持disk的话就从memory踢出到disk上
       memoryStore.evictBlocksToFreeSpace(Some(blockId), numBytesToFree, memoryMode)
     }
     // NOTE: If the memory store evicts blocks, then those evictions will synchronously call
